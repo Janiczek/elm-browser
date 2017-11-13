@@ -2,9 +2,9 @@
   "name": "elm-browser",
   "version": "1.0.0",
   "description": "Smalltalk-like System Browser for Elm projects",
-  "main": "main.js",
+  "main": "src/js/main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "elm-make src/elm/Main.elm --output dist/elm.js && electron ."
   },
   "repository": "https://github.com/janiczek/elm-browser",
   "keywords": [
