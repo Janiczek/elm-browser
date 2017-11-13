@@ -1,0 +1,23 @@
+{
+  "name": "elm-browser",
+  "version": "1.0.0",
+  "description": "Smalltalk-like System Browser for Elm projects",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "repository": "https://github.com/janiczek/elm-browser",
+  "keywords": [
+    "Elm",
+    "Smalltalk",
+    "System browser",
+    "editor",
+    "IDE"
+  ],
+  "author": "Martin Janiczek",
+  "license": "CC0-1.0",
+  "devDependencies": {
+    "devtron": "^1.4.0",
+    "electron": "~1.8.1"
+  }
+}
