@@ -121,19 +121,10 @@
     color: #000;
 }
 
-.row {
-    overflow: visible;
-}
-
 .row--active {
     background-color: #D5E6FA;
 }
 
 .row__icon {
     padding-left: 8px;
-}
-
-[data-balloon]:before,
-[data-balloon]:after {
-    transition: all 0.1s ease-out 0.1s;
 }

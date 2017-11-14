@@ -1,11 +1,14 @@
 module Types exposing (..)
 
 import Json.Encode as JE
+import Html exposing (Html)
 
 
 type Msg
     = AskForProject
     | CloseProject
+    | ShowFooterMsg ( Html Msg, String )
+    | HideFooterMsg
     | MsgForElm MsgForElm
     | LogError String
     | SelectOne Column Identifier
@@ -18,6 +21,7 @@ type MsgForElectron
     | ErrorLogRequested String
     | CreateIndex
     | ChangeTitle String
+    | SetEditorModel { sourceCode : String, language : Language }
 
 
 type MsgForElm
@@ -29,6 +33,7 @@ type MsgForElm
 
 type alias Model =
     { project : Maybe Project
+    , footerMsg : Maybe ( Html Msg, String )
     }
 
 
@@ -45,6 +50,11 @@ type Column
     = PackageColumn
     | ModuleColumn
     | DefinitionColumn
+
+
+type Language
+    = Elm
+    | JavaScript
 
 
 type alias Selection =

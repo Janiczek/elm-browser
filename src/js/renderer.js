@@ -1,6 +1,7 @@
 const electron = require('electron');
 const {remote, ipcRenderer} = electron;
 const Elm = require('../../dist/js/elm.js');
+const monacoLoader = require('monaco-loader');
 
 const mainProcess = remote.require('./main.js');
 const app = Elm.Main.fullscreen();
@@ -39,6 +40,10 @@ app.ports.msgForElectron.subscribe(msgForElectron => {
         changeTitle(data);
         break;
 
+    case 'SetEditorModel':
+        setEditorModel(data);
+        break;
+
     default:
         console.error({error: 'Unexpected Msg for Electron', msg: msgForElectron});
         break;
@@ -71,4 +76,8 @@ const createIndex = () => {
 
 const changeTitle = newTitle => {
     document.title = newTitle;
+};
+
+const setEditorModel = ({sourceCode, language}) => {
+//    editor.setModel(monaco.editor.createModel(sourceCode, language));
 };

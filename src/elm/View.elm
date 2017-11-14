@@ -35,14 +35,19 @@ footerMessage model =
     let
         ok =
             [ allOk, H.text "Ready." ]
+
+        defaultFooterMsg =
+            if model.project == Nothing then
+                ok
+            else
+                model.project
+                    |> Maybe.andThen .index
+                    |> Maybe.map (\_ -> ok)
+                    |> Maybe.withDefault [ spinner, H.text "Indexing your project" ]
     in
-        if model.project == Nothing then
-            ok
-        else
-            model.project
-                |> Maybe.andThen .index
-                |> Maybe.map (\_ -> ok)
-                |> Maybe.withDefault [ spinner, H.text "Indexing your project" ]
+        model.footerMsg
+            |> Maybe.map (\( icon, msg ) -> [ icon, H.text msg ])
+            |> Maybe.withDefault defaultFooterMsg
 
 
 spinner : Html Msg
@@ -142,7 +147,7 @@ package selection package =
         PackageColumn
         (Selection.packageIdentifier package)
         (Selection.isPackageSelected package selection)
-        (packageIdentifier package)
+        (packageRow package)
 
 
 modules : Index -> Selection -> Html Msg
@@ -164,7 +169,7 @@ module_ selection module_ =
         ModuleColumn
         module_.name
         (Selection.isModuleSelected module_ selection)
-        (moduleIdentifier module_)
+        (moduleRow module_)
 
 
 isInSelectedPackages : Selection -> Package -> Bool
@@ -175,7 +180,15 @@ isInSelectedPackages selection package =
 
 definitions : Index -> Selection -> Html Msg
 definitions index selection =
-    (if List.isEmpty selection.modules then
+    (if
+        let
+            modules =
+                modulesForPackages selection.packages index
+        in
+            selection.modules
+                |> List.filter (\module_ -> modules |> List.member module_)
+                |> List.isEmpty
+     then
         []
      else
         index
@@ -189,6 +202,14 @@ definitions index selection =
             )
         |> List.concatMap (\( moduleName, def ) -> definition selection moduleName def)
         |> innerTable
+
+
+modulesForPackages : List Identifier -> Index -> List Identifier
+modulesForPackages packages index =
+    index
+        |> List.filter (\package -> packages |> List.member (Selection.packageIdentifier package))
+        |> List.concatMap .modules
+        |> List.map .name
 
 
 isInSelectedModules : Selection -> Module -> Bool
@@ -207,7 +228,7 @@ definition selection moduleName definition =
                         DefinitionColumn
                         (Selection.definitionIdentifier moduleName definition)
                         (Selection.isDefinitionSelected moduleName definition selection)
-                        (definitionIdentifier definition)
+                        (definitionRow definition)
 
                 constructorRows =
                     constructors
@@ -217,7 +238,7 @@ definition selection moduleName definition =
                                     DefinitionColumn
                                     (Selection.definitionIdentifier moduleName constructor)
                                     (Selection.isDefinitionSelected moduleName constructor selection)
-                                    (definitionIdentifier constructor)
+                                    (definitionRow constructor)
                             )
             in
                 typeRow :: constructorRows
@@ -227,7 +248,7 @@ definition selection moduleName definition =
                 DefinitionColumn
                 (Selection.definitionIdentifier moduleName definition)
                 (Selection.isDefinitionSelected moduleName definition selection)
-                (definitionIdentifier definition)
+                (definitionRow definition)
             ]
 
 
@@ -262,8 +283,8 @@ row column identifier isSelected content =
         ]
 
 
-packageIdentifier : Package -> Html Msg
-packageIdentifier { author, name, version, isUserPackage, containsNativeModules, containsEffectModules } =
+packageRow : Package -> Html Msg
+packageRow { author, name, version, isUserPackage, containsNativeModules, containsEffectModules } =
     H.div
         [ HA.class "identifier" ]
         [ H.span
@@ -290,8 +311,8 @@ divider str =
         [ H.text str ]
 
 
-moduleIdentifier : Module -> Html Msg
-moduleIdentifier { name, isExposed, isNative, isEffect, isPort } =
+moduleRow : Module -> Html Msg
+moduleRow { name, isExposed, isNative, isEffect, isPort } =
     H.div
         [ HA.class "identifier" ]
         [ H.span
@@ -307,8 +328,8 @@ moduleIdentifier { name, isExposed, isNative, isEffect, isPort } =
         ]
 
 
-definitionIdentifier : CommonDefinition a -> Html Msg
-definitionIdentifier { name, isExposed } =
+definitionRow : CommonDefinition a -> Html Msg
+definitionRow { name, isExposed } =
     H.div
         [ HA.class "identifier" ]
         [ H.span
@@ -345,41 +366,37 @@ effectIcon condition =
     iconFa "rocket" condition "Effect manager"
 
 
-icon : String -> Bool -> String -> Html Msg
-icon type_ condition tooltip =
+genericIcon : String -> String -> Bool -> String -> Html Msg
+genericIcon classPrefix type_ condition tooltip =
     -- TODO yes, yes, String icons, I know, @krisajenkins...
     if condition then
-        H.span
-            [ HA.attribute "data-balloon" tooltip
-            , HA.attribute "data-balloon-pos" "down"
-            ]
-            [ H.span [ HA.class <| "row__icon icon icon-" ++ type_ ] [] ]
+        let
+            iconString =
+                "icon " ++ classPrefix ++ type_
+        in
+            H.span
+                [ HA.class <| "row__icon " ++ iconString
+                , HE.onMouseEnter (ShowFooterMsg ( H.span [ HA.class <| "footer__icon " ++ iconString ] [], tooltip ))
+                , HE.onMouseLeave HideFooterMsg
+                ]
+                []
     else
         nothing
+
+
+icon : String -> Bool -> String -> Html Msg
+icon type_ condition tooltip =
+    genericIcon "icon-" type_ condition tooltip
 
 
 iconFa : String -> Bool -> String -> Html Msg
 iconFa type_ condition tooltip =
-    if condition then
-        H.span
-            [ HA.attribute "data-balloon" tooltip
-            , HA.attribute "data-balloon-pos" "down"
-            ]
-            [ H.span [ HA.class <| "row__icon icon icon--fa fa-" ++ type_ ] [] ]
-    else
-        nothing
+    genericIcon "icon--fa fa-" type_ condition tooltip
 
 
 iconMfizz : String -> Bool -> String -> Html Msg
 iconMfizz type_ condition tooltip =
-    if condition then
-        H.span
-            [ HA.attribute "data-balloon" tooltip
-            , HA.attribute "data-balloon-pos" "down"
-            ]
-            [ H.span [ HA.class <| "row__icon icon icon--mfizz icon-" ++ type_ ] [] ]
-    else
-        nothing
+    genericIcon "icon--mfizz icon-" type_ condition tooltip
 
 
 nothing : Html Msg

@@ -18,7 +18,9 @@ main =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { project = Nothing }
+    ( { project = Nothing
+      , footerMsg = Nothing
+      }
     , Cmd.none
     )
 
@@ -33,6 +35,16 @@ update msg model =
 
         CloseProject ->
             ( { model | project = Nothing }
+            , Cmd.none
+            )
+
+        ShowFooterMsg footerMsg ->
+            ( { model | footerMsg = Just footerMsg }
+            , Cmd.none
+            )
+
+        HideFooterMsg ->
+            ( { model | footerMsg = Nothing }
             , Cmd.none
             )
 
