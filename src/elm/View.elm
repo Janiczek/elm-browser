@@ -97,8 +97,19 @@ table project =
 
 tableWithContent : Selection -> Index -> Html Msg
 tableWithContent selection index =
-    H.div [ HA.class "top-table" ]
-        [ H.div [ HA.class "top-table__headings" ]
+    H.div
+        [ HA.class "main-table" ]
+        [ topTable selection index
+        , bottomTable selection index
+        ]
+
+
+topTable : Selection -> Index -> Html Msg
+topTable selection index =
+    H.div
+        [ HA.class "top-table" ]
+        [ H.div
+            [ HA.class "top-table__headings" ]
             [ H.div [ HA.class "top-table__heading" ] [ H.text "Packages" ]
             , H.div [ HA.class "top-table__heading" ] [ H.text "Modules" ]
             , H.div [ HA.class "top-table__heading" ] [ H.text "Definitions" ]
@@ -109,6 +120,13 @@ tableWithContent selection index =
             , definitions index selection
             ]
         ]
+
+
+bottomTable : Selection -> Index -> Html Msg
+bottomTable selection index =
+    H.div
+        [ HA.class "bottom-table" ]
+        [ H.text "TODO source code editor/viewer here" ]
 
 
 packages : Index -> Selection -> Html Msg
@@ -246,44 +264,59 @@ row column identifier isSelected content =
 
 packageIdentifier : Package -> Html Msg
 packageIdentifier { author, name, version, isUserPackage, containsNativeModules, containsEffectModules } =
-    let
-        divider str =
-            H.span
-                [ HA.class "package__identifier__divider" ]
-                [ H.text str ]
-    in
-        H.div [ HA.class "package__identifier" ]
-            [ H.span [ HA.class "package__identifier__content" ]
-                [ H.text author
-                , divider "/"
-                , H.text name
-                , userPackageIcon isUserPackage
-                , nativeIcon containsNativeModules
-                , effectIcon containsEffectModules
-                ]
-            , H.span [ HA.class "package__identifier__version" ]
-                [ divider "@"
-                , H.text version
-                ]
+    H.div
+        [ HA.class "identifier" ]
+        [ H.span
+            [ HA.class "identifier__content" ]
+            [ H.text author
+            , divider "/"
+            , H.text name
             ]
+        , H.span
+            [ HA.class "identifier__metadata" ]
+            [ userPackageIcon isUserPackage
+            , nativeIcon containsNativeModules
+            , effectIcon containsEffectModules
+            , divider "@"
+            , H.text version
+            ]
+        ]
+
+
+divider : String -> Html Msg
+divider str =
+    H.span
+        [ HA.class "identifier__divider" ]
+        [ H.text str ]
 
 
 moduleIdentifier : Module -> Html Msg
 moduleIdentifier { name, isExposed, isNative, isEffect, isPort } =
-    H.span []
-        [ H.text name
-        , notExposedIcon (not isExposed)
-        , nativeIcon isNative
-        , effectIcon isEffect
-        , portModuleIcon isPort
+    H.div
+        [ HA.class "identifier" ]
+        [ H.span
+            [ HA.class "identifier__content" ]
+            [ H.text name ]
+        , H.span
+            [ HA.class "identifier__metadata" ]
+            [ notExposedIcon (not isExposed)
+            , nativeIcon isNative
+            , effectIcon isEffect
+            , portModuleIcon isPort
+            ]
         ]
 
 
 definitionIdentifier : CommonDefinition a -> Html Msg
 definitionIdentifier { name, isExposed } =
-    H.span []
-        [ H.text name
-        , notExposedIcon (not isExposed)
+    H.div
+        [ HA.class "identifier" ]
+        [ H.span
+            [ HA.class "identifier__content" ]
+            [ H.text name ]
+        , H.span
+            [ HA.class "identifier__metadata" ]
+            [ notExposedIcon (not isExposed) ]
         ]
 
 

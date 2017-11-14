@@ -51,10 +51,17 @@
     75%      { content: '\e8a2'; }
 }
 
-.top-table {
+.main-table {
     display: flex;
     flex-direction: column;
     width: 100%;
+}
+
+.top-table {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    border-bottom: 1px solid #ddd;
 }
 
 .top-table__headings {
@@ -88,22 +95,29 @@
     border-right: 1px solid #ddd;
 }
 
-.package__identifier {
+.bottom-table {
+    display: flex;
+    flex: 1;
+    padding: 8px;
+}
+
+.identifier {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
 }
 
-.package__identifier__divider {
+.identifier__divider {
     color: #aaa;
     padding: 0 4px;
 }
 
-.package__identifier__version {
+.identifier__metadata {
     color: #aaa;
+    text-align: right;
 }
 
-.row--active .package__identifier__version {
+.identifier__metadata .icon {
     color: #000;
 }
 
