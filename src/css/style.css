@@ -104,7 +104,7 @@
 }
 
 .row--active .package__identifier__version {
-    color: #fff;
+    color: #000;
 }
 
 .row {
@@ -112,8 +112,7 @@
 }
 
 .row--active {
-    color: #fff;
-    background-color: #116cd6;
+    background-color: #D5E6FA;
 }
 
 .row__icon {
