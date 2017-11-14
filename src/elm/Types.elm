@@ -31,6 +31,8 @@ type alias Model =
 
 type alias Project =
     { rootPath : String
+
+    -- RemoteData ↓
     , index : Maybe Index
     , selection : Selection
     }
