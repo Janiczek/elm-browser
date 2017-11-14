@@ -15,7 +15,7 @@
     "IDE"
   ],
   "author": "Martin Janiczek",
-  "license": "BSD3",
+  "license": "BSD-3-Clause",
   "devDependencies": {
     "devtron": "^1.4.0",
     "electron": "~1.8.1"
