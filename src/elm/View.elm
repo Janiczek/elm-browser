@@ -142,7 +142,6 @@ row isSelected content =
     H.tr []
         [ H.td
             [ HA.classList
-                -- TODO css
                 [ ( "row", True )
                 , ( "row--active", isSelected )
                 ]

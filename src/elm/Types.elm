@@ -80,7 +80,6 @@ type alias ModuleName =
 
 
 type alias Definition =
-    -- TODO partially exposed union types (only some constructors)
     { name : DefinitionName
     , kind : DefinitionKind
     , isExposed : Bool
