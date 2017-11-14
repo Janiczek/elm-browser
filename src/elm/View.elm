@@ -92,7 +92,7 @@ table : Project -> Html Msg
 table project =
     project.index
         |> Maybe.map (tableWithContent project.selection)
-        |> Maybe.withDefault (tableWithContent NothingSelected [])
+        |> Maybe.withDefault (tableWithContent (Selection [] [] []) [])
 
 
 tableWithContent : Selection -> Index -> Html Msg
@@ -121,13 +121,20 @@ packages index selection =
 package : Selection -> Package -> Html Msg
 package selection package =
     row
+        PackageColumn
+        (Selection.packageIdentifier package)
         (Selection.isPackageSelected package selection)
         (packageIdentifier package)
 
 
 modules : Index -> Selection -> Html Msg
 modules index selection =
-    index
+    (if List.isEmpty selection.packages then
+        index
+     else
+        index
+            |> List.filter (isInSelectedPackages selection)
+    )
         |> List.concatMap .modules
         |> List.map (module_ selection)
         |> innerTable
@@ -136,29 +143,74 @@ modules index selection =
 module_ : Selection -> Module -> Html Msg
 module_ selection module_ =
     row
+        ModuleColumn
+        module_.name
         (Selection.isModuleSelected module_ selection)
         (moduleIdentifier module_)
 
 
+isInSelectedPackages : Selection -> Package -> Bool
+isInSelectedPackages selection package =
+    selection.packages
+        |> List.member (Selection.packageIdentifier package)
+
+
 definitions : Index -> Selection -> Html Msg
 definitions index selection =
-    -- TODO constructors of `type Msg = ...` as entries!!
-    index
-        |> List.concatMap .modules
+    (if List.isEmpty selection.modules then
+        []
+     else
+        index
+            |> List.concatMap .modules
+            |> List.filter (isInSelectedModules selection)
+    )
         |> List.concatMap
             (\module_ ->
                 module_.definitions
                     |> List.map (\definition -> ( module_.name, definition ))
             )
-        |> List.map (\( moduleName, def ) -> definition selection moduleName def)
+        |> List.concatMap (\( moduleName, def ) -> definition selection moduleName def)
         |> innerTable
 
 
-definition : Selection -> ModuleName -> Definition -> Html Msg
+isInSelectedModules : Selection -> Module -> Bool
+isInSelectedModules selection module_ =
+    selection.modules
+        |> List.member module_.name
+
+
+definition : Selection -> ModuleName -> Definition -> List (Html Msg)
 definition selection moduleName definition =
-    row
-        (Selection.isDefinitionSelected moduleName definition selection)
-        (definitionIdentifier definition)
+    case definition.kind of
+        Type { constructors } ->
+            let
+                typeRow =
+                    row
+                        DefinitionColumn
+                        (Selection.definitionIdentifier moduleName definition)
+                        (Selection.isDefinitionSelected moduleName definition selection)
+                        (definitionIdentifier definition)
+
+                constructorRows =
+                    constructors
+                        |> List.map
+                            (\constructor ->
+                                row
+                                    DefinitionColumn
+                                    (Selection.definitionIdentifier moduleName constructor)
+                                    (Selection.isDefinitionSelected moduleName constructor selection)
+                                    (definitionIdentifier constructor)
+                            )
+            in
+                typeRow :: constructorRows
+
+        _ ->
+            [ row
+                DefinitionColumn
+                (Selection.definitionIdentifier moduleName definition)
+                (Selection.isDefinitionSelected moduleName definition selection)
+                (definitionIdentifier definition)
+            ]
 
 
 innerTable : List (Html Msg) -> Html Msg
@@ -170,9 +222,18 @@ innerTable elements =
         ]
 
 
-row : Bool -> Html Msg -> Html Msg
-row isSelected content =
-    H.tr []
+row : Column -> Identifier -> Bool -> Html Msg -> Html Msg
+row column identifier isSelected content =
+    -- TODO Ctrl+click for multiple select (and deselect) ... SelectAnother
+    -- TODO Shift+click for range select
+    H.tr
+        [ HE.onClick
+            (if isSelected then
+                Deselect column identifier
+             else
+                SelectOne column identifier
+            )
+        ]
         [ H.td
             [ HA.classList
                 [ ( "row", True )
@@ -218,7 +279,7 @@ moduleIdentifier { name, isExposed, isNative, isEffect, isPort } =
         ]
 
 
-definitionIdentifier : Definition -> Html Msg
+definitionIdentifier : CommonDefinition a -> Html Msg
 definitionIdentifier { name, isExposed } =
     H.span []
         [ H.text name

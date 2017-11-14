@@ -8,6 +8,9 @@ type Msg
     | CloseProject
     | MsgForElm MsgForElm
     | LogError String
+    | SelectOne Column Identifier
+    | SelectAnother Column Identifier
+    | Deselect Column Identifier
 
 
 type MsgForElectron
@@ -32,17 +35,23 @@ type alias Model =
 type alias Project =
     { rootPath : String
 
-    -- RemoteData ↓
+    -- TODO RemoteData ↓
     , index : Maybe Index
     , selection : Selection
     }
 
 
-type Selection
-    = NothingSelected
-    | PackageSelected String
-    | PackageAndModuleSelected String String
-    | AllSelected String String String
+type Column
+    = PackageColumn
+    | ModuleColumn
+    | DefinitionColumn
+
+
+type alias Selection =
+    { packages : List Identifier
+    , modules : List Identifier
+    , definitions : List Identifier
+    }
 
 
 type alias Index =
@@ -67,6 +76,13 @@ type alias Module =
     , isNative : Bool
     , isPort : Bool
     , definitions : List Definition
+    }
+
+
+type alias CommonDefinition a =
+    { a
+        | name : DefinitionName
+        , isExposed : Bool
     }
 
 
@@ -113,6 +129,10 @@ type alias DefinitionName =
 
 
 type alias DefinitionType =
+    String
+
+
+type alias Identifier =
     String
 
 

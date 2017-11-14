@@ -3,59 +3,29 @@ module Selection exposing (..)
 import Types exposing (..)
 
 
-packageIdentifier : Package -> String
-packageIdentifier { author, name, version } =
-    author ++ "/" ++ name ++ "@" ++ version
+packageIdentifier : Package -> Identifier
+packageIdentifier { author, name } =
+    author ++ "/" ++ name
 
 
-definitionIdentifier : ModuleName -> Definition -> String
+definitionIdentifier : ModuleName -> CommonDefinition a -> Identifier
 definitionIdentifier moduleName { name } =
     moduleName ++ "." ++ name
 
 
 isPackageSelected : Package -> Selection -> Bool
 isPackageSelected package selection =
-    case selection of
-        NothingSelected ->
-            False
-
-        PackageSelected selectedPackage ->
-            packageIdentifier package == selectedPackage
-
-        PackageAndModuleSelected selectedPackage _ ->
-            packageIdentifier package == selectedPackage
-
-        AllSelected selectedPackage _ _ ->
-            packageIdentifier package == selectedPackage
+    selection.packages
+        |> List.member (packageIdentifier package)
 
 
 isModuleSelected : Module -> Selection -> Bool
 isModuleSelected module_ selection =
-    case selection of
-        NothingSelected ->
-            False
-
-        PackageSelected _ ->
-            False
-
-        PackageAndModuleSelected _ selectedModule ->
-            module_.name == selectedModule
-
-        AllSelected _ selectedModule _ ->
-            module_.name == selectedModule
+    selection.modules
+        |> List.member module_.name
 
 
-isDefinitionSelected : ModuleName -> Definition -> Selection -> Bool
-isDefinitionSelected moduleName definition selection =
-    case selection of
-        NothingSelected ->
-            False
-
-        PackageSelected _ ->
-            False
-
-        PackageAndModuleSelected _ _ ->
-            False
-
-        AllSelected _ _ selectedDefinition ->
-            definitionIdentifier moduleName definition == selectedDefinition
+isDefinitionSelected : ModuleName -> CommonDefinition a -> Selection -> Bool
+isDefinitionSelected moduleName definitionOrConstructor selection =
+    selection.definitions
+        |> List.member (definitionIdentifier moduleName definitionOrConstructor)

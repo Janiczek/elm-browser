@@ -44,7 +44,7 @@ update msg model =
                             Just
                                 { rootPath = path
                                 , index = Nothing
-                                , selection = NothingSelected
+                                , selection = Selection [] [] []
                                 }
                       }
                     , Cmd.batch
@@ -77,6 +77,130 @@ update msg model =
             ( model
             , Ports.sendMsgForElectron (ErrorLogRequested err)
             )
+
+        SelectOne column identifier ->
+            let
+                newProject =
+                    model.project
+                        |> Maybe.map
+                            (\project ->
+                                case column of
+                                    PackageColumn ->
+                                        { project
+                                            | selection =
+                                                Selection
+                                                    [ identifier ]
+                                                    []
+                                                    []
+                                        }
+
+                                    ModuleColumn ->
+                                        { project
+                                            | selection =
+                                                Selection
+                                                    project.selection.packages
+                                                    [ identifier ]
+                                                    []
+                                        }
+
+                                    DefinitionColumn ->
+                                        { project
+                                            | selection =
+                                                Selection
+                                                    project.selection.packages
+                                                    project.selection.modules
+                                                    [ identifier ]
+                                        }
+                            )
+            in
+                ( { model | project = newProject }
+                , Cmd.none
+                )
+
+        SelectAnother column identifier ->
+            let
+                newProject =
+                    model.project
+                        |> Maybe.map
+                            (\project ->
+                                case column of
+                                    PackageColumn ->
+                                        { project
+                                            | selection =
+                                                Selection
+                                                    (identifier :: project.selection.packages)
+                                                    project.selection.modules
+                                                    project.selection.definitions
+                                        }
+
+                                    ModuleColumn ->
+                                        { project
+                                            | selection =
+                                                Selection
+                                                    project.selection.packages
+                                                    (identifier :: project.selection.modules)
+                                                    project.selection.definitions
+                                        }
+
+                                    DefinitionColumn ->
+                                        { project
+                                            | selection =
+                                                Selection
+                                                    project.selection.packages
+                                                    project.selection.modules
+                                                    (identifier :: project.selection.definitions)
+                                        }
+                            )
+            in
+                ( { model | project = newProject }
+                , Cmd.none
+                )
+
+        Deselect column identifier ->
+            let
+                newProject =
+                    model.project
+                        |> Maybe.map
+                            (\project ->
+                                case column of
+                                    -- TODO maybe filter all descendants also?
+                                    PackageColumn ->
+                                        { project
+                                            | selection =
+                                                Selection
+                                                    (project.selection.packages
+                                                        |> List.filter (\package -> identifier /= package)
+                                                    )
+                                                    project.selection.modules
+                                                    project.selection.definitions
+                                        }
+
+                                    ModuleColumn ->
+                                        { project
+                                            | selection =
+                                                Selection
+                                                    project.selection.packages
+                                                    (project.selection.modules
+                                                        |> List.filter (\module_ -> identifier /= module_)
+                                                    )
+                                                    project.selection.definitions
+                                        }
+
+                                    DefinitionColumn ->
+                                        { project
+                                            | selection =
+                                                Selection
+                                                    project.selection.packages
+                                                    project.selection.modules
+                                                    (project.selection.definitions
+                                                        |> List.filter (\definition -> identifier /= definition)
+                                                    )
+                                        }
+                            )
+            in
+                ( { model | project = newProject }
+                , Cmd.none
+                )
 
 
 subscriptions : Model -> Sub Msg

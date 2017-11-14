@@ -103,12 +103,17 @@
     color: #aaa;
 }
 
+.row--active .package__identifier__version {
+    color: #fff;
+}
+
 .row {
     overflow: visible;
 }
 
 .row--active {
-  /* TODO .row--active */
+    color: #fff;
+    background-color: #116cd6;
 }
 
 .row__icon {
