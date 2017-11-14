@@ -1,8 +1,9 @@
 port module Ports exposing (..)
 
-import Types exposing (..)
+import Index
 import Json.Decode as JD
 import Json.Encode as JE
+import Types exposing (..)
 
 
 port msgForElectron : PortData -> Cmd msg
@@ -21,6 +22,12 @@ sendMsgForElectron msg =
             ErrorLogRequested err ->
                 { tag = "ErrorLogRequested", data = JE.string err }
 
+            CreateIndex ->
+                { tag = "CreateIndex", data = JE.null }
+
+            ChangeTitle title ->
+                { tag = "ChangeTitle", data = JE.string title }
+
 
 getMsgForElm : (MsgForElm -> msg) -> (String -> msg) -> Sub msg
 getMsgForElm tagger onError =
@@ -33,10 +40,21 @@ getMsgForElm tagger onError =
                             tagger <| ProjectPathChosen path
 
                         Err e ->
-                            onError e
+                            onError <| "Invalid data for ProjectPathChosen: " ++ e
 
                 "NoProjectPathChosen" ->
                     tagger <| NoProjectPathChosen
+
+                "ProjectClosed" ->
+                    tagger <| ProjectClosed
+
+                "IndexCreated" ->
+                    case JD.decodeValue Index.decoder portData.data of
+                        Ok index ->
+                            tagger <| IndexCreated index
+
+                        Err e ->
+                            onError <| "Invalid data for IndexCreated: " ++ e
 
                 _ ->
                     onError <| "Unexpected Msg for Elm: " ++ toString portData

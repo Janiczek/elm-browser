@@ -1,13 +1,21 @@
 const electron = require('electron');
-const remote = electron.remote;
-const Elm = require('../../dist/elm.js');
+const {remote, ipcRenderer} = electron;
+const Elm = require('../../dist/js/elm.js');
 
-const mainProcess = remote.require('./main');
+const mainProcess = remote.require('./main.js');
 const app = Elm.Main.fullscreen();
 
 const sendToElm = (tag, data) => {
-  app.ports.msgForElm.send({tag, data});
-}
+    app.ports.msgForElm.send({tag, data});
+};
+
+ipcRenderer.on('open-project', (event, arg) => {
+    chooseProjectPath();
+});
+
+ipcRenderer.on('close-project', (event, arg) => {
+    sendToElm('ProjectClosed', null);
+});
 
 app.ports.msgForElectron.subscribe(msgForElectron => {
 
@@ -15,15 +23,23 @@ app.ports.msgForElectron.subscribe(msgForElectron => {
 
     switch (tag) {
 
-      case 'ChooseProjectPath':
+    case 'ChooseProjectPath':
         chooseProjectPath();
         break;
 
-      case 'ErrorLogRequested':
+    case 'ErrorLogRequested':
         errorLogRequested(data);
         break;
 
-      default:
+    case 'CreateIndex':
+        createIndex();
+        break;
+
+    case 'ChangeTitle':
+        changeTitle(data);
+        break;
+
+    default:
         console.error({error: 'Unexpected Msg for Electron', msg: msgForElectron});
         break;
 
@@ -32,14 +48,23 @@ app.ports.msgForElectron.subscribe(msgForElectron => {
 });
 
 const chooseProjectPath = () => {
-  const paths = mainProcess.selectDirectory();
-  if (paths === undefined) {
-    sendToElm('NoProjectPathChosen', null);
-  } else {
-    sendToElm('ProjectPathChosen', paths[0]);
-  }
+    const paths = mainProcess.selectDirectory();
+    if (paths === undefined) {
+        sendToElm('NoProjectPathChosen', null);
+    } else {
+        sendToElm('ProjectPathChosen', paths[0]);
+    }
 };
 
 const errorLogRequested = error => {
-  console.error(error);
+    console.error(error);
+};
+
+const createIndex = () => {
+    const index = require('../project_index_dummy.json');
+    sendToElm('IndexCreated', index);
+};
+
+const changeTitle = newTitle => {
+    document.title = newTitle;
 };

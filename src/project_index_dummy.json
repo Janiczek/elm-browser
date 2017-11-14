@@ -1,0 +1,88 @@
+[
+  {
+    "author": "user",
+    "modules": [
+      "Main"
+    ],
+    "name": "project",
+    "isUserPackage": true,
+    "version": "1.0.0"
+  },
+  {
+    "author": "elm-lang",
+    "modules": [
+      "Array",
+      "Basics",
+      "Bitwise",
+      "Char",
+      "Color",
+      "Date",
+      "Debug",
+      "Dict",
+      "Json.Decode",
+      "Json.Encode",
+      "List",
+      "Maybe",
+      "Native.Array",
+      "Native.Basics",
+      "Native.Bitwise",
+      "Native.Char",
+      "Native.Date",
+      "Native.Debug",
+      "Native.Json",
+      "Native.List",
+      "Native.Platform",
+      "Native.Regex",
+      "Native.Scheduler",
+      "Native.String",
+      "Native.Time",
+      "Native.Utils",
+      "Platform",
+      "Platform.Cmd",
+      "Platform.Sub",
+      "Process",
+      "Random",
+      "Regex",
+      "Result",
+      "Set",
+      "String",
+      "Task",
+      "Time",
+      "Tuple"
+    ],
+    "name": "core",
+    "isUserPackage": false,
+    "version": "5.1.1"
+  },
+  {
+    "author": "elm-lang",
+    "modules": [
+      "Html",
+      "Html.Attributes",
+      "Html.Events",
+      "Html.Keyed",
+      "Html.Lazy"
+    ],
+    "name": "html",
+    "isUserPackage": false,
+    "version": "2.0.0"
+  },
+  {
+    "author": "elm-lang",
+    "modules": [
+      "Native.Debug",
+      "Native.VirtualDom",
+      "VirtualDom",
+      "VirtualDom.Debug",
+      "VirtualDom.Expando",
+      "VirtualDom.Helpers",
+      "VirtualDom.History",
+      "VirtualDom.Metadata",
+      "VirtualDom.Overlay",
+      "VirtualDom.Report"
+    ],
+    "name": "virtual-dom",
+    "isUserPackage": false,
+    "version": "2.0.4"
+  }
+]

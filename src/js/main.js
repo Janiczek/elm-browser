@@ -1,6 +1,5 @@
 const electron = require('electron');
-const dialog = electron.dialog;
-const app = electron.app;
+const {app, dialog, Menu, ipcMain} = electron;
 const BrowserWindow = electron.BrowserWindow;
 
 const path = require('path');
@@ -9,39 +8,65 @@ const url = require('url');
 let mainWindow;
 
 const createWindow = () => {
-  mainWindow = new BrowserWindow({width: 800, height: 600});
+    mainWindow = new BrowserWindow({
+        width: 800,
+        height: 600
+    });
 
-  mainWindow.loadURL(url.format({
-    pathname: path.join(__dirname, '../index.html'),
-    protocol: 'file:',
-    slashes: true
-  }));
+    mainWindow.loadURL(url.format({
+        pathname: path.join(__dirname, '../index.html'),
+        protocol: 'file:',
+        slashes: true
+    }));
 
-  mainWindow.webContents.openDevTools();
+    mainWindow.webContents.openDevTools();
 
-  mainWindow.on('closed', function () {
-    mainWindow = null;
-  });
+    mainWindow.on('closed', function () {
+        mainWindow = null;
+    });
+
+    const menuTemplate = [
+        {
+            label: 'File',
+            submenu: [
+                {
+                    label: 'Open Project',
+                    click: (menuItem, browserWindow, event) => {
+                        mainWindow.webContents.send('open-project');
+                    }
+                },
+                {
+                    label: 'Close Project',
+                    click: (menuItem, browserWindow, event) => {
+                        mainWindow.webContents.send('close-project');
+                    }
+                },
+            ]
+        }
+    ];
+
+    const menu = Menu.buildFromTemplate(menuTemplate);
+    Menu.setApplicationMenu(menu);
 };
 
 const selectDirectory = () => {
-  return dialog.showOpenDialog(mainWindow, {
-    properties: ['openDirectory']
-  });
+    return dialog.showOpenDialog(mainWindow, {
+        properties: ['openDirectory']
+    });
 };
 
 app.on('ready', createWindow);
 
 app.on('window-all-closed', function () {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+    if (process.platform !== 'darwin') {
+        app.quit();
+    }
 });
 
 app.on('activate', function () {
-  if (mainWindow === null) {
-    createWindow();
-  }
+    if (mainWindow === null) {
+        createWindow();
+    }
 });
 
 exports.selectDirectory = selectDirectory;

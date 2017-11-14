@@ -1,14 +1,14 @@
 port module Main exposing (main)
 
+import Html
 import Ports
-import Html as H exposing (Html)
-import Html.Events as HE
 import Types exposing (..)
+import View exposing (view)
 
 
 main : Program Never Model Msg
 main =
-    H.program
+    Html.program
         { init = init
         , update = update
         , view = view
@@ -39,12 +39,29 @@ update msg model =
         MsgForElm msgForElm ->
             case msgForElm of
                 ProjectPathChosen path ->
-                    ( { model | project = Just { rootPath = path } }
-                    , Cmd.none
+                    ( { model | project = Just { rootPath = path, index = Nothing } }
+                    , Cmd.batch
+                        [ Ports.sendMsgForElectron CreateIndex
+                        , Ports.sendMsgForElectron (ChangeTitle (windowTitle (Just path)))
+                        ]
                     )
 
                 NoProjectPathChosen ->
-                    ( model, Cmd.none )
+                    ( model
+                    , Cmd.none
+                    )
+
+                ProjectClosed ->
+                    ( { model | project = Nothing }
+                    , Ports.sendMsgForElectron (ChangeTitle (windowTitle Nothing))
+                    )
+
+                IndexCreated index ->
+                    ( { model
+                        | project = model.project |> Maybe.map (\project -> { project | index = Just index })
+                      }
+                    , Cmd.none
+                    )
 
         LogError err ->
             ( model
@@ -57,43 +74,19 @@ subscriptions model =
     Ports.getMsgForElm MsgForElm LogError
 
 
-view : Model -> Html Msg
-view model =
-    H.div []
-        [ viewMaybeProject model.project
-        , viewDebug model
-        ]
+windowTitle : Maybe String -> String
+windowTitle maybePath =
+    case maybePath of
+        Nothing ->
+            "Elm Browser"
 
-
-viewMaybeProject : Maybe Project -> Html Msg
-viewMaybeProject maybeProject =
-    maybeProject
-        |> Maybe.map viewProject
-        |> Maybe.withDefault viewNoProject
-
-
-viewNoProject : Html Msg
-viewNoProject =
-    H.div []
-        [ H.text "No project open"
-        , H.button
-            [ HE.onClick AskForProject ]
-            [ H.text "Open project" ]
-        ]
-
-
-viewProject : Project -> Html Msg
-viewProject project =
-    H.div []
-        [ H.text <| "Open project: " ++ project.rootPath
-        , H.button
-            [ HE.onClick CloseProject ]
-            [ H.text "Close project" ]
-        ]
-
-
-viewDebug : Model -> Html Msg
-viewDebug model =
-    model
-        |> toString
-        |> H.text
+        Just path ->
+            let
+                lastDirectory =
+                    path
+                        |> String.split "/"
+                        |> List.reverse
+                        |> List.head
+                        |> Maybe.withDefault path
+            in
+                "Elm Browser - " ++ lastDirectory

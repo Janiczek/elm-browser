@@ -1,7 +1,7 @@
 {
     "version": "1.0.0",
     "summary": "Smalltalk-like System Browser for Elm projects",
-    "repository": "https://github.com/janiczek/elm-browser",
+    "repository": "https://github.com/Janiczek/elm-browser.git",
     "license": "BSD3",
     "source-directories": [
         "src/elm/"

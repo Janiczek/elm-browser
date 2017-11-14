@@ -13,11 +13,15 @@ type Msg
 type MsgForElectron
     = ChooseProjectPath
     | ErrorLogRequested String
+    | CreateIndex
+    | ChangeTitle String
 
 
 type MsgForElm
-    = ProjectPathChosen Path
+    = ProjectPathChosen String
     | NoProjectPathChosen
+    | ProjectClosed
+    | IndexCreated Index
 
 
 type alias Model =
@@ -26,11 +30,37 @@ type alias Model =
 
 
 type alias Project =
-    { rootPath : Path
+    { rootPath : String
+    , index : Maybe Index
     }
 
 
-type alias Path =
+type alias Index =
+    List Package
+
+
+type alias Package =
+    { author : Author
+    , name : PackageName
+    , version : Version
+    , isUserPackage : Bool
+    , modules : List ModuleName
+    }
+
+
+type alias Author =
+    String
+
+
+type alias PackageName =
+    String
+
+
+type alias Version =
+    String
+
+
+type alias ModuleName =
     String
 
 

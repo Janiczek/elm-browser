@@ -1,4 +1,5 @@
 /node_modules
 /elm-stuff
-/dist
+/dist/js/elm.js
 /yarn.lock
+/elm.js
