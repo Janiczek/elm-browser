@@ -21,6 +21,70 @@ package =
 
 module_ : Decoder Module
 module_ =
-    JD.map2 Module
+    JD.map3 Module
         (JD.field "name" JD.string)
-        (JD.field "definitions" (JD.list JD.string))
+        (JD.field "isExposed" JD.bool)
+        (JD.field "definitions" (JD.list definition))
+
+
+definition : Decoder Definition
+definition =
+    JD.map4 Definition
+        (JD.field "name" JD.string)
+        definitionKind
+        (JD.field "isExposed" JD.bool)
+        (JD.field "sourceCode" JD.string)
+
+
+definitionKind : Decoder DefinitionKind
+definitionKind =
+    JD.field "kind" JD.string
+        |> JD.andThen
+            (\kind ->
+                case kind of
+                    "constant" ->
+                        constant
+
+                    "function" ->
+                        function
+
+                    "type" ->
+                        type_
+
+                    "typeAlias" ->
+                        typeAlias
+
+                    _ ->
+                        JD.fail "Unknown definition kind!"
+            )
+
+
+constant : Decoder DefinitionKind
+constant =
+    JD.field "type" JD.string
+        |> JD.map (\type_ -> Constant { type_ = type_ })
+
+
+function : Decoder DefinitionKind
+function =
+    JD.field "type" JD.string
+        |> JD.map (\type_ -> Function { type_ = type_ })
+
+
+type_ : Decoder DefinitionKind
+type_ =
+    JD.field "constructors" (JD.list typeConstructor)
+        |> JD.map (\constructors -> Type { constructors = constructors })
+
+
+typeAlias : Decoder DefinitionKind
+typeAlias =
+    JD.succeed TypeAlias
+
+
+typeConstructor : Decoder TypeConstructor
+typeConstructor =
+    JD.map3 TypeConstructor
+        (JD.field "name" JD.string)
+        (JD.field "isExposed" JD.bool)
+        (JD.field "type" JD.string)

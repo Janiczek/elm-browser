@@ -3,9 +3,14 @@ module Selection exposing (..)
 import Types exposing (..)
 
 
-identifier : Package -> String
-identifier { author, name, version } =
+packageIdentifier : Package -> String
+packageIdentifier { author, name, version } =
     author ++ "/" ++ name ++ "@" ++ version
+
+
+definitionIdentifier : ModuleName -> Definition -> String
+definitionIdentifier moduleName { name } =
+    moduleName ++ "." ++ name
 
 
 isPackageSelected : Package -> Selection -> Bool
@@ -15,13 +20,13 @@ isPackageSelected package selection =
             False
 
         PackageSelected selectedPackage ->
-            identifier package == selectedPackage
+            packageIdentifier package == selectedPackage
 
         PackageAndModuleSelected selectedPackage _ ->
-            identifier package == selectedPackage
+            packageIdentifier package == selectedPackage
 
         AllSelected selectedPackage _ _ ->
-            identifier package == selectedPackage
+            packageIdentifier package == selectedPackage
 
 
 isModuleSelected : Module -> Selection -> Bool
@@ -40,8 +45,8 @@ isModuleSelected module_ selection =
             module_.name == selectedModule
 
 
-isDefinitionSelected : Definition -> Selection -> Bool
-isDefinitionSelected definition selection =
+isDefinitionSelected : ModuleName -> Definition -> Selection -> Bool
+isDefinitionSelected moduleName definition selection =
     case selection of
         NothingSelected ->
             False
@@ -53,4 +58,4 @@ isDefinitionSelected definition selection =
             False
 
         AllSelected _ _ selectedDefinition ->
-            definition == selectedDefinition
+            definitionIdentifier moduleName definition == selectedDefinition

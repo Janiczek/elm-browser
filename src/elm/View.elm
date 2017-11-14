@@ -104,24 +104,28 @@ module_ : Selection -> Module -> Html Msg
 module_ selection module_ =
     row
         (Selection.isModuleSelected module_ selection)
-        (H.text module_.name)
+        (moduleIdentifier module_)
 
 
 definitions : Index -> Selection -> Html Msg
 definitions index selection =
-    -- TODO actual data
+    -- TODO constructors of `type Msg = ...` as entries!!
     index
         |> List.concatMap .modules
-        |> List.concatMap .definitions
-        |> List.map (definition selection)
+        |> List.concatMap
+            (\module_ ->
+                module_.definitions
+                    |> List.map (\definition -> ( module_.name, definition ))
+            )
+        |> List.map (\( moduleName, def ) -> definition selection moduleName def)
         |> innerTable
 
 
-definition : Selection -> Definition -> Html Msg
-definition selection definition =
+definition : Selection -> ModuleName -> Definition -> Html Msg
+definition selection moduleName definition =
     row
-        (Selection.isDefinitionSelected definition selection)
-        (H.text definition)
+        (Selection.isDefinitionSelected moduleName definition selection)
+        (definitionIdentifier definition)
 
 
 innerTable : List (Html Msg) -> Html Msg
@@ -149,6 +153,8 @@ row isSelected content =
 
 packageIdentifier : Package -> Html Msg
 packageIdentifier { author, name, version, isUserPackage } =
+    -- TODO package with native modules icon
+    -- TODO package with effect managers icon
     let
         divider str =
             H.span
@@ -162,7 +168,37 @@ packageIdentifier { author, name, version, isUserPackage } =
             , divider "@"
             , H.text version
             , if isUserPackage then
-                H.span [ HA.class "row__icon icon icon-user" ] []
+                icon "user"
               else
                 H.text ""
             ]
+
+
+moduleIdentifier : Module -> Html Msg
+moduleIdentifier { name, isExposed } =
+    -- TODO native module icon
+    -- TODO effect manager icon
+    H.span []
+        [ H.text name
+        , if isExposed then
+            H.text ""
+          else
+            icon "mute"
+        ]
+
+
+definitionIdentifier : Definition -> Html Msg
+definitionIdentifier { name, isExposed } =
+    H.span []
+        [ H.text name
+        , if isExposed then
+            H.text ""
+          else
+            icon "mute"
+        ]
+
+
+icon : String -> Html Msg
+icon type_ =
+    -- TODO yes, yes, I know, @krisajenkins...
+    H.span [ HA.class <| "row__icon icon icon-" ++ type_ ] []

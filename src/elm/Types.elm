@@ -58,6 +58,7 @@ type alias Package =
 
 type alias Module =
     { name : ModuleName
+    , isExposed : Bool
     , definitions : List Definition
     }
 
@@ -79,6 +80,33 @@ type alias ModuleName =
 
 
 type alias Definition =
+    -- TODO partially exposed union types (only some constructors)
+    { name : DefinitionName
+    , kind : DefinitionKind
+    , isExposed : Bool
+    , sourceCode : String
+    }
+
+
+type DefinitionKind
+    = Constant { type_ : DefinitionType }
+    | Function { type_ : DefinitionType }
+    | Type { constructors : List TypeConstructor }
+    | TypeAlias
+
+
+type alias TypeConstructor =
+    { name : DefinitionName
+    , isExposed : Bool
+    , type_ : DefinitionType
+    }
+
+
+type alias DefinitionName =
+    String
+
+
+type alias DefinitionType =
     String
 
 
