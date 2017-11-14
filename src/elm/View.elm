@@ -26,16 +26,23 @@ footer : Model -> Html Msg
 footer model =
     H.footer [ HA.class "toolbar toolbar-footer" ]
         [ H.h1 [ HA.class "title footer__progress" ]
-            [ iconForCurrentState model
-            , H.text "Maybe we're indexing, maybe not! TODO!"
-            ]
+            (footerMessage model)
         ]
 
 
-iconForCurrentState : Model -> Html Msg
-iconForCurrentState model =
-    -- or allOk
-    spinner
+footerMessage : Model -> List (Html Msg)
+footerMessage model =
+    let
+        ok =
+            [ allOk, H.text "Ready." ]
+    in
+        if model.project == Nothing then
+            ok
+        else
+            model.project
+                |> Maybe.andThen .index
+                |> Maybe.map (\_ -> ok)
+                |> Maybe.withDefault [ spinner, H.text "Indexing your project" ]
 
 
 spinner : Html Msg
