@@ -61,7 +61,11 @@ const errorLogRequested = error => {
 };
 
 const createIndex = () => {
+    // TODO in future do things in the main thread, not the renderer thread?
     const index = require('../project_index_dummy.json');
+    //setTimeout(function(){
+    //    sendToElm('IndexCreated', index);
+    //}, 1000);
     sendToElm('IndexCreated', index);
 };
 

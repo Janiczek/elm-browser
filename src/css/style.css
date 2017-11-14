@@ -12,6 +12,12 @@
     margin-bottom: 16px;
 }
 
+.elm-logo {
+    width: 120px;
+    height: 120px;
+    margin-bottom: 16px;
+}
+
 .top-table {
     display: flex;
     flex-direction: column;

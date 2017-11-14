@@ -32,7 +32,13 @@ empty : String -> Html Msg
 empty message =
     H.div
         [ HA.class "empty-dialog" ]
-        [ H.div
+        [ H.img
+            [ HA.src "../resources/tangram_bw.png"
+            , HA.alt "Elm tangram logo"
+            , HA.class "elm-logo"
+            ]
+            []
+        , H.div
             [ HA.class "empty-dialog__message" ]
             [ H.text message ]
         , H.button
@@ -52,7 +58,8 @@ table : Project -> Html Msg
 table project =
     project.index
         |> Maybe.map (tableWithContent project.selection)
-        |> Maybe.withDefault emptyTable
+        -- TODO ↓ progressbar for the indexing? or at least tell the user that we are indexing!
+        |> Maybe.withDefault (tableWithContent NothingSelected [])
 
 
 tableWithContent : Selection -> Index -> Html Msg
@@ -69,12 +76,6 @@ tableWithContent selection index =
             , definitions index selection
             ]
         ]
-
-
-emptyTable : Html Msg
-emptyTable =
-    -- TODO test! didn't see this one yet.
-    empty "No suitable files found"
 
 
 packages : Index -> Selection -> Html Msg
