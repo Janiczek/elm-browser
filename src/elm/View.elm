@@ -220,6 +220,7 @@ moduleIdentifier { name, isExposed } =
         , if isExposed then
             H.text ""
           else
+            -- TODO font awesome ... has eye-slash
             icon "mute"
         ]
 
