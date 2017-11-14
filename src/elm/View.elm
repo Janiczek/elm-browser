@@ -11,6 +11,7 @@ view : Model -> Html Msg
 view model =
     H.div [ HA.class "window" ]
         [ content model
+        , footer model
         ]
 
 
@@ -19,6 +20,32 @@ content model =
     H.div [ HA.class "window-content" ]
         [ maybeTable model.project
         ]
+
+
+footer : Model -> Html Msg
+footer model =
+    H.footer [ HA.class "toolbar toolbar-footer" ]
+        [ H.h1 [ HA.class "title footer__progress" ]
+            [ iconForCurrentState model
+            , H.text "Maybe we're indexing, maybe not! TODO!"
+            ]
+        ]
+
+
+iconForCurrentState : Model -> Html Msg
+iconForCurrentState model =
+    -- or allOk
+    spinner
+
+
+spinner : Html Msg
+spinner =
+    H.span [ HA.class "icon footer__icon spinner" ] []
+
+
+allOk : Html Msg
+allOk =
+    H.span [ HA.class "icon footer__icon icon-check" ] []
 
 
 maybeTable : Maybe Project -> Html Msg
@@ -160,16 +187,20 @@ packageIdentifier { author, name, version, isUserPackage } =
                 [ HA.class "package__identifier__divider" ]
                 [ H.text str ]
     in
-        H.span []
-            [ H.text author
-            , divider "/"
-            , H.text name
-            , divider "@"
-            , H.text version
-            , if isUserPackage then
-                icon "user"
-              else
-                H.text ""
+        H.div [ HA.class "package__identifier" ]
+            [ H.span [ HA.class "package__identifier__content" ]
+                [ H.text author
+                , divider "/"
+                , H.text name
+                , if isUserPackage then
+                    icon "user"
+                  else
+                    H.text ""
+                ]
+            , H.span [ HA.class "package__identifier__version" ]
+                [ divider "@"
+                , H.text version
+                ]
             ]
 
 

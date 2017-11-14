@@ -19,6 +19,30 @@
     margin-bottom: 16px;
 }
 
+.title.footer__progress {
+    text-align: left;
+    padding-left: 8px;
+}
+
+.footer__icon:before {
+    display: inline;
+    margin-right: 8px;
+    font-size: 16px;
+    top: 2px;
+}
+
+.spinner:before {
+    animation: spinner 2s linear infinite;
+    content: '\e89f';
+}
+
+@keyframes spinner {
+    0%, 100% { content: '\e89f'; } /* .icon-progress-0 through 3 */
+    25%      { content: '\e8a0'; }
+    50%      { content: '\e8a1'; }
+    75%      { content: '\e8a2'; }
+}
+
 .top-table {
     display: flex;
     flex-direction: column;
@@ -56,9 +80,19 @@
     border-right: 1px solid #ddd;
 }
 
+.package__identifier {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
 .package__identifier__divider {
     color: #aaa;
     padding: 0 4px;
+}
+
+.package__identifier__version {
+    color: #aaa;
 }
 
 .row {
