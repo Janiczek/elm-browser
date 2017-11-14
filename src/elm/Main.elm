@@ -90,8 +90,8 @@ update msg model =
                                             | selection =
                                                 Selection
                                                     [ identifier ]
-                                                    []
-                                                    []
+                                                    project.selection.modules
+                                                    project.selection.definitions
                                         }
 
                                     ModuleColumn ->
@@ -100,7 +100,7 @@ update msg model =
                                                 Selection
                                                     project.selection.packages
                                                     [ identifier ]
-                                                    []
+                                                    project.selection.definitions
                                         }
 
                                     DefinitionColumn ->
