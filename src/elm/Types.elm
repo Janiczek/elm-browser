@@ -32,7 +32,15 @@ type alias Model =
 type alias Project =
     { rootPath : String
     , index : Maybe Index
+    , selection : Selection
     }
+
+
+type Selection
+    = NothingSelected
+    | PackageSelected String
+    | PackageAndModuleSelected String String
+    | AllSelected String String String
 
 
 type alias Index =
@@ -44,7 +52,13 @@ type alias Package =
     , name : PackageName
     , version : Version
     , isUserPackage : Bool
-    , modules : List ModuleName
+    , modules : List Module
+    }
+
+
+type alias Module =
+    { name : ModuleName
+    , definitions : List Definition
     }
 
 
@@ -61,6 +75,10 @@ type alias Version =
 
 
 type alias ModuleName =
+    String
+
+
+type alias Definition =
     String
 
 

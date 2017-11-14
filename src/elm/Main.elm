@@ -39,7 +39,14 @@ update msg model =
         MsgForElm msgForElm ->
             case msgForElm of
                 ProjectPathChosen path ->
-                    ( { model | project = Just { rootPath = path, index = Nothing } }
+                    ( { model
+                        | project =
+                            Just
+                                { rootPath = path
+                                , index = Nothing
+                                , selection = NothingSelected
+                                }
+                      }
                     , Cmd.batch
                         [ Ports.sendMsgForElectron CreateIndex
                         , Ports.sendMsgForElectron (ChangeTitle (windowTitle (Just path)))
@@ -58,7 +65,10 @@ update msg model =
 
                 IndexCreated index ->
                     ( { model
-                        | project = model.project |> Maybe.map (\project -> { project | index = Just index })
+                        | project =
+                            model.project
+                                |> Maybe.map
+                                    (\project -> { project | index = Just index })
                       }
                     , Cmd.none
                     )

@@ -16,4 +16,11 @@ package =
         (JD.field "name" JD.string)
         (JD.field "version" JD.string)
         (JD.field "isUserPackage" JD.bool)
-        (JD.field "modules" (JD.list JD.string))
+        (JD.field "modules" (JD.list module_))
+
+
+module_ : Decoder Module
+module_ =
+    JD.map2 Module
+        (JD.field "name" JD.string)
+        (JD.field "definitions" (JD.list JD.string))
