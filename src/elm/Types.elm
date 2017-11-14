@@ -54,6 +54,8 @@ type alias Package =
     , name : PackageName
     , version : Version
     , isUserPackage : Bool
+    , containsEffectModules : Bool
+    , containsNativeModules : Bool
     , modules : List Module
     }
 
@@ -61,6 +63,9 @@ type alias Package =
 type alias Module =
     { name : ModuleName
     , isExposed : Bool
+    , isEffect : Bool
+    , isNative : Bool
+    , isPort : Bool
     , definitions : List Definition
     }
 

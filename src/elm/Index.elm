@@ -11,19 +11,24 @@ decoder =
 
 package : Decoder Package
 package =
-    JD.map5 Package
+    JD.map7 Package
         (JD.field "author" JD.string)
         (JD.field "name" JD.string)
         (JD.field "version" JD.string)
         (JD.field "isUserPackage" JD.bool)
+        (JD.field "containsEffectModules" JD.bool)
+        (JD.field "containsNativeModules" JD.bool)
         (JD.field "modules" (JD.list module_))
 
 
 module_ : Decoder Module
 module_ =
-    JD.map3 Module
+    JD.map6 Module
         (JD.field "name" JD.string)
         (JD.field "isExposed" JD.bool)
+        (JD.field "isEffect" JD.bool)
+        (JD.field "isNative" JD.bool)
+        (JD.field "isPort" JD.bool)
         (JD.field "definitions" (JD.list definition))
 
 

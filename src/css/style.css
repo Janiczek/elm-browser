@@ -24,6 +24,14 @@
     padding-left: 8px;
 }
 
+.icon.icon--fa:before {
+    font-family: 'FontAwesome';
+}
+
+.icon.icon--mfizz:before {
+    font-family: 'FontMfizz';
+}
+
 .footer__icon:before {
     display: inline;
     margin-right: 8px;
@@ -96,7 +104,7 @@
 }
 
 .row {
-  /* TODO .row */
+    overflow: visible;
 }
 
 .row--active {
@@ -105,4 +113,9 @@
 
 .row__icon {
     padding-left: 8px;
+}
+
+[data-balloon]:before,
+[data-balloon]:after {
+    transition: all 0.1s ease-out 0.1s;
 }

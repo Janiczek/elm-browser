@@ -92,7 +92,6 @@ table : Project -> Html Msg
 table project =
     project.index
         |> Maybe.map (tableWithContent project.selection)
-        -- TODO ↓ progressbar for the indexing? or at least tell the user that we are indexing!
         |> Maybe.withDefault (tableWithContent NothingSelected [])
 
 
@@ -185,9 +184,7 @@ row isSelected content =
 
 
 packageIdentifier : Package -> Html Msg
-packageIdentifier { author, name, version, isUserPackage } =
-    -- TODO package with native modules icon
-    -- TODO package with effect managers icon
+packageIdentifier { author, name, version, isUserPackage, containsNativeModules, containsEffectModules } =
     let
         divider str =
             H.span
@@ -199,10 +196,9 @@ packageIdentifier { author, name, version, isUserPackage } =
                 [ H.text author
                 , divider "/"
                 , H.text name
-                , if isUserPackage then
-                    icon "user"
-                  else
-                    H.text ""
+                , userPackageIcon isUserPackage
+                , nativeIcon containsNativeModules
+                , effectIcon containsEffectModules
                 ]
             , H.span [ HA.class "package__identifier__version" ]
                 [ divider "@"
@@ -212,16 +208,13 @@ packageIdentifier { author, name, version, isUserPackage } =
 
 
 moduleIdentifier : Module -> Html Msg
-moduleIdentifier { name, isExposed } =
-    -- TODO native module icon
-    -- TODO effect manager icon
+moduleIdentifier { name, isExposed, isNative, isEffect, isPort } =
     H.span []
         [ H.text name
-        , if isExposed then
-            H.text ""
-          else
-            -- TODO font awesome ... has eye-slash
-            icon "mute"
+        , notExposedIcon (not isExposed)
+        , nativeIcon isNative
+        , effectIcon isEffect
+        , portModuleIcon isPort
         ]
 
 
@@ -229,14 +222,72 @@ definitionIdentifier : Definition -> Html Msg
 definitionIdentifier { name, isExposed } =
     H.span []
         [ H.text name
-        , if isExposed then
-            H.text ""
-          else
-            icon "mute"
+        , notExposedIcon (not isExposed)
         ]
 
 
-icon : String -> Html Msg
-icon type_ =
-    -- TODO yes, yes, I know, @krisajenkins...
-    H.span [ HA.class <| "row__icon icon icon-" ++ type_ ] []
+userPackageIcon : Bool -> Html Msg
+userPackageIcon condition =
+    icon "user" condition "User package"
+
+
+portModuleIcon : Bool -> Html Msg
+portModuleIcon condition =
+    iconFa "comments" condition "Port module"
+
+
+notExposedIcon : Bool -> Html Msg
+notExposedIcon condition =
+    iconFa "eye-slash" condition "Not exposed"
+
+
+nativeIcon : Bool -> Html Msg
+nativeIcon condition =
+    iconMfizz "javascript-alt" condition "Native (JS)"
+
+
+effectIcon : Bool -> Html Msg
+effectIcon condition =
+    iconFa "rocket" condition "Effect manager"
+
+
+icon : String -> Bool -> String -> Html Msg
+icon type_ condition tooltip =
+    -- TODO yes, yes, String icons, I know, @krisajenkins...
+    if condition then
+        H.span
+            [ HA.attribute "data-balloon" tooltip
+            , HA.attribute "data-balloon-pos" "down"
+            ]
+            [ H.span [ HA.class <| "row__icon icon icon-" ++ type_ ] [] ]
+    else
+        nothing
+
+
+iconFa : String -> Bool -> String -> Html Msg
+iconFa type_ condition tooltip =
+    if condition then
+        H.span
+            [ HA.attribute "data-balloon" tooltip
+            , HA.attribute "data-balloon-pos" "down"
+            ]
+            [ H.span [ HA.class <| "row__icon icon icon--fa fa-" ++ type_ ] [] ]
+    else
+        nothing
+
+
+iconMfizz : String -> Bool -> String -> Html Msg
+iconMfizz type_ condition tooltip =
+    if condition then
+        H.span
+            [ HA.attribute "data-balloon" tooltip
+            , HA.attribute "data-balloon-pos" "down"
+            ]
+            [ H.span [ HA.class <| "row__icon icon icon--mfizz icon-" ++ type_ ] [] ]
+    else
+        nothing
+
+
+nothing : Html Msg
+nothing =
+    H.text ""
