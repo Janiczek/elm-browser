@@ -113,15 +113,9 @@ type alias Definition =
 type DefinitionKind
     = Constant { type_ : DefinitionType }
     | Function { type_ : DefinitionType }
-    | Type { constructors : List TypeConstructor }
+    | Type
+    | TypeConstructor { type_ : DefinitionType }
     | TypeAlias
-
-
-type alias TypeConstructor =
-    { name : DefinitionName
-    , isExposed : Bool
-    , type_ : DefinitionType
-    }
 
 
 type alias DefinitionName =

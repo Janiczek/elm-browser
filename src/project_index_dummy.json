@@ -9,11 +9,10 @@
              "isPort": false,
              "definitions": [
                  {"kind": "constant", "name": "main", "type": "Html msg", "isExposed": true, "sourceCode": "main : Html msg\nmain =\n    Html.text \"Hello World!\""},
-                 {"kind": "type", "name": "Msg", "isExposed": false, "sourceCode": "type Msg\n    = NoOp\n    | IncrementBy Int\n    | Reset", "constructors": [
-                     {"name": "NoOp", "isExposed": false, "type": "Msg"},
-                     {"name": "IncrementBy", "isExposed": false, "type": "Int -> Msg"},
-                     {"name": "Reset", "isExposed": false, "type": "Msg"}
-                 ]},
+                 {"kind": "type", "name": "Msg", "isExposed": false, "sourceCode": "type Msg\n    = NoOp\n    | IncrementBy Int\n    | Reset"},
+                 {"kind": "typeConstructor", "name": "NoOp", "isExposed": false, "type": "Msg","sourceCode": "type Msg\n    = NoOp\n    | IncrementBy Int\n    | Reset"},
+                 {"kind": "typeConstructor", "name": "IncrementBy", "isExposed": false, "type": "Int -> Msg","sourceCode": "type Msg\n    = NoOp\n    | IncrementBy Int\n    | Reset"},
+                 {"kind": "typeConstructor", "name": "Reset", "isExposed": false, "type": "Msg","sourceCode": "type Msg\n    = NoOp\n    | IncrementBy Int\n    | Reset"},
                  {"kind": "function", "name": "add", "type": "Int -> Int -> Int", "isExposed": false, "sourceCode": "add : Int -> Int -> Int\nadd a b =\n    a + b"},
                  {"kind": "typeAlias", "name": "Model", "isExposed": false, "sourceCode": "type alias Model =\n    Int"},
                  {"kind": "constant", "name": "initialModel", "type": "Model", "isExposed": false, "sourceCode": "initialModel : Model\ninitialModel =\n    0"}

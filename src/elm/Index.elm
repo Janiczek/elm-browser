@@ -57,6 +57,9 @@ definitionKind =
                     "type" ->
                         type_
 
+                    "typeConstructor" ->
+                        typeConstructor
+
                     "typeAlias" ->
                         typeAlias
 
@@ -79,8 +82,13 @@ function =
 
 type_ : Decoder DefinitionKind
 type_ =
-    JD.field "constructors" (JD.list typeConstructor)
-        |> JD.map (\constructors -> Type { constructors = constructors })
+    JD.succeed Type
+
+
+typeConstructor : Decoder DefinitionKind
+typeConstructor =
+    JD.field "type" JD.string
+        |> JD.map (\type_ -> TypeConstructor { type_ = type_ })
 
 
 typeAlias : Decoder DefinitionKind
@@ -88,33 +96,34 @@ typeAlias =
     JD.succeed TypeAlias
 
 
-typeConstructor : Decoder TypeConstructor
-typeConstructor =
-    JD.map3 TypeConstructor
-        (JD.field "name" JD.string)
-        (JD.field "isExposed" JD.bool)
-        (JD.field "type" JD.string)
-
-
 sourceCode : Selection -> Index -> Maybe String
 sourceCode selection index =
-    selection.definition
-        |> Maybe.andThen
-            (\selectedDefinition ->
-                index
-                    |> List.concatMap .modules
-                    |> definitionsWithModuleName
-                    |> List.filter
-                        (\( moduleName, definition ) ->
-                            Selection.definitionIdentifier moduleName definition == selectedDefinition
-                        )
-                    |> List.map (\( _, definition ) -> definition.sourceCode)
-                    |> List.head
-            )
+    selectedModuleNameAndDefinition selection index
+        |> ifInSelectedPackage selection index
+        |> Maybe.map (\( _, definition ) -> definition.sourceCode)
 
 
 language : Selection -> Index -> Maybe Language
 language selection index =
+    moduleForSelectedDefinition selection index
+        |> Maybe.map languageForModule
+
+
+moduleForSelectedDefinition : Selection -> Index -> Maybe Module
+moduleForSelectedDefinition selection index =
+    selectedModuleNameAndDefinition selection index
+        |> Maybe.map (\( moduleName, _ ) -> moduleName)
+        |> Maybe.andThen
+            (\moduleName ->
+                index
+                    |> List.concatMap .modules
+                    |> List.filter (\module_ -> module_.name == moduleName)
+                    |> List.head
+            )
+
+
+selectedModuleNameAndDefinition : Selection -> Index -> Maybe ( ModuleName, Definition )
+selectedModuleNameAndDefinition selection index =
     selection.definition
         |> Maybe.andThen
             (\selectedDefinition ->
@@ -125,16 +134,21 @@ language selection index =
                         (\( moduleName, definition ) ->
                             Selection.definitionIdentifier moduleName definition == selectedDefinition
                         )
-                    |> List.map (\( moduleName, _ ) -> moduleName)
                     |> List.head
-                    |> Maybe.andThen
-                        (\moduleName ->
-                            index
-                                |> List.concatMap .modules
-                                |> List.filter (\module_ -> module_.name == moduleName)
-                                |> List.map languageForModule
-                                |> List.head
-                        )
+            )
+
+
+ifInSelectedPackage : Selection -> Index -> Maybe ( ModuleName, Definition ) -> Maybe ( ModuleName, Definition )
+ifInSelectedPackage selection index maybeModuleNameAndDefinition =
+    maybeModuleNameAndDefinition
+        |> Maybe.andThen
+            (\( moduleName, definition ) ->
+                selectedPackages selection index
+                    |> List.concatMap .modules
+                    |> List.filter (\module_ -> module_.name == moduleName)
+                    -- if exists, return what you got:
+                    |> List.head
+                    |> Maybe.map (\_ -> ( moduleName, definition ))
             )
 
 
@@ -144,6 +158,16 @@ languageForModule module_ =
         JavaScript
     else
         Elm
+
+
+selectedPackages : Selection -> Index -> List Package
+selectedPackages selection index =
+    index
+        |> List.filter
+            (\package ->
+                selection.packages
+                    |> List.member (Selection.packageIdentifier package)
+            )
 
 
 definitionsWithModuleName : List Module -> List ( ModuleName, Definition )
