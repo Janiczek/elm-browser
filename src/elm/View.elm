@@ -3,6 +3,8 @@ module View exposing (view)
 import Html as H exposing (Html)
 import Html.Attributes as HA
 import Html.Events as HE
+import Index
+import Json.Decode as JD exposing (Decoder)
 import Selection
 import Types exposing (..)
 
@@ -97,7 +99,7 @@ table : Project -> Html Msg
 table project =
     project.index
         |> Maybe.map (tableWithContent project.selection)
-        |> Maybe.withDefault (tableWithContent (Selection [] [] []) [])
+        |> Maybe.withDefault (tableWithContent (Selection [] [] Nothing) [])
 
 
 tableWithContent : Selection -> Index -> Html Msg
@@ -129,9 +131,37 @@ topTable selection index =
 
 bottomTable : Selection -> Index -> Html Msg
 bottomTable selection index =
-    H.div
-        [ HA.class "bottom-table" ]
-        [ H.text "TODO source code editor/viewer here" ]
+    let
+        sourceCode =
+            index
+                |> Index.sourceCode selection
+                |> Maybe.withDefault ""
+
+        language =
+            index
+                |> Index.language selection
+                |> Maybe.withDefault Elm
+                |> languageToMode
+    in
+        H.div
+            [ HA.class "bottom-table" ]
+            [ H.node "ace-widget"
+                [ HE.on "editor-content" (JD.succeed EditorChanged)
+                , HA.attribute "value" sourceCode
+                , HA.attribute "mode" language
+                ]
+                []
+            ]
+
+
+languageToMode : Language -> String
+languageToMode language =
+    case language of
+        Elm ->
+            "ace/mode/elm"
+
+        JavaScript ->
+            "ace/mode/javascript"
 
 
 packages : Index -> Selection -> Html Msg
@@ -195,11 +225,7 @@ definitions index selection =
             |> List.concatMap .modules
             |> List.filter (isInSelectedModules selection)
     )
-        |> List.concatMap
-            (\module_ ->
-                module_.definitions
-                    |> List.map (\definition -> ( module_.name, definition ))
-            )
+        |> Index.definitionsWithModuleName
         |> List.concatMap (\( moduleName, def ) -> definition selection moduleName def)
         |> innerTable
 

@@ -38,6 +38,11 @@ update msg model =
             , Cmd.none
             )
 
+        EditorChanged ->
+            ( model
+            , Ports.sendMsgForElectron FetchEditorValue
+            )
+
         ShowFooterMsg footerMsg ->
             ( { model | footerMsg = Just footerMsg }
             , Cmd.none
@@ -56,7 +61,7 @@ update msg model =
                             Just
                                 { rootPath = path
                                 , index = Nothing
-                                , selection = Selection [] [] []
+                                , selection = Selection [] [] Nothing
                                 }
                       }
                     , Cmd.batch
@@ -85,6 +90,15 @@ update msg model =
                     , Cmd.none
                     )
 
+                EditorValue sourceCode ->
+                    let
+                        _ =
+                            Debug.log "TODO Do something about the changed source code!" sourceCode
+                    in
+                        ( model
+                        , Cmd.none
+                        )
+
         LogError err ->
             ( model
             , Ports.sendMsgForElectron (ErrorLogRequested err)
@@ -103,7 +117,7 @@ update msg model =
                                                 Selection
                                                     [ identifier ]
                                                     project.selection.modules
-                                                    project.selection.definitions
+                                                    project.selection.definition
                                         }
 
                                     ModuleColumn ->
@@ -112,7 +126,7 @@ update msg model =
                                                 Selection
                                                     project.selection.packages
                                                     [ identifier ]
-                                                    project.selection.definitions
+                                                    project.selection.definition
                                         }
 
                                     DefinitionColumn ->
@@ -121,7 +135,7 @@ update msg model =
                                                 Selection
                                                     project.selection.packages
                                                     project.selection.modules
-                                                    [ identifier ]
+                                                    (Just identifier)
                                         }
                             )
             in
@@ -142,7 +156,7 @@ update msg model =
                                                 Selection
                                                     (identifier :: project.selection.packages)
                                                     project.selection.modules
-                                                    project.selection.definitions
+                                                    project.selection.definition
                                         }
 
                                     ModuleColumn ->
@@ -151,7 +165,7 @@ update msg model =
                                                 Selection
                                                     project.selection.packages
                                                     (identifier :: project.selection.modules)
-                                                    project.selection.definitions
+                                                    project.selection.definition
                                         }
 
                                     DefinitionColumn ->
@@ -160,7 +174,7 @@ update msg model =
                                                 Selection
                                                     project.selection.packages
                                                     project.selection.modules
-                                                    (identifier :: project.selection.definitions)
+                                                    (Just identifier)
                                         }
                             )
             in
@@ -184,7 +198,7 @@ update msg model =
                                                         |> List.filter (\package -> identifier /= package)
                                                     )
                                                     project.selection.modules
-                                                    project.selection.definitions
+                                                    project.selection.definition
                                         }
 
                                     ModuleColumn ->
@@ -195,7 +209,7 @@ update msg model =
                                                     (project.selection.modules
                                                         |> List.filter (\module_ -> identifier /= module_)
                                                     )
-                                                    project.selection.definitions
+                                                    project.selection.definition
                                         }
 
                                     DefinitionColumn ->
@@ -204,9 +218,7 @@ update msg model =
                                                 Selection
                                                     project.selection.packages
                                                     project.selection.modules
-                                                    (project.selection.definitions
-                                                        |> List.filter (\definition -> identifier /= definition)
-                                                    )
+                                                    Nothing
                                         }
                             )
             in

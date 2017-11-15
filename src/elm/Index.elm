@@ -1,6 +1,7 @@
-module Index exposing (decoder)
+module Index exposing (decoder, sourceCode, language, definitionsWithModuleName)
 
 import Json.Decode as JD exposing (Decoder)
+import Selection
 import Types exposing (..)
 
 
@@ -93,3 +94,63 @@ typeConstructor =
         (JD.field "name" JD.string)
         (JD.field "isExposed" JD.bool)
         (JD.field "type" JD.string)
+
+
+sourceCode : Selection -> Index -> Maybe String
+sourceCode selection index =
+    selection.definition
+        |> Maybe.andThen
+            (\selectedDefinition ->
+                index
+                    |> List.concatMap .modules
+                    |> definitionsWithModuleName
+                    |> List.filter
+                        (\( moduleName, definition ) ->
+                            Selection.definitionIdentifier moduleName definition == selectedDefinition
+                        )
+                    |> List.map (\( _, definition ) -> definition.sourceCode)
+                    |> List.head
+            )
+
+
+language : Selection -> Index -> Maybe Language
+language selection index =
+    selection.definition
+        |> Maybe.andThen
+            (\selectedDefinition ->
+                index
+                    |> List.concatMap .modules
+                    |> definitionsWithModuleName
+                    |> List.filter
+                        (\( moduleName, definition ) ->
+                            Selection.definitionIdentifier moduleName definition == selectedDefinition
+                        )
+                    |> List.map (\( moduleName, _ ) -> moduleName)
+                    |> List.head
+                    |> Maybe.andThen
+                        (\moduleName ->
+                            index
+                                |> List.concatMap .modules
+                                |> List.filter (\module_ -> module_.name == moduleName)
+                                |> List.map languageForModule
+                                |> List.head
+                        )
+            )
+
+
+languageForModule : Module -> Language
+languageForModule module_ =
+    if module_.isNative then
+        JavaScript
+    else
+        Elm
+
+
+definitionsWithModuleName : List Module -> List ( ModuleName, Definition )
+definitionsWithModuleName modules =
+    modules
+        |> List.concatMap
+            (\module_ ->
+                module_.definitions
+                    |> List.map (\definition -> ( module_.name, definition ))
+            )

@@ -1,0 +1,63 @@
+{
+  "name": "ace-widget",
+  "authors": [
+    "Horacio Gonzalez <horacio.gonzalez@gmail.com>"
+  ],
+  "description": "LostInBrittany's Ace (http://ace.c9.io/) widget",
+  "keywords": [
+    "web-component",
+    "web-components",
+    "polymer",
+    "lostinbrittany",
+    "ace"
+  ],
+  "main": "ace-widget.html",
+  "license": "MIT",
+  "homepage": "https://github.com/LostInBrittany/ace-widget",
+  "ignore": [],
+  "dependencies": {
+    "polymer": "Polymer/polymer#1.9 - 2",
+    "ace-builds": "~1.2.0"
+  },
+  "devDependencies": {
+    "iron-component-page": "PolymerElements/iron-component-page#1 - 2",
+    "iron-demo-helpers": "PolymerElements/iron-demo-helpers#1 - 2",
+    "iron-icon": "PolymerElements/iron-icon#1 - 2",
+    "iron-icons": "PolymerElements/iron-icons#1 - 2",
+    "iron-test-helpers": "PolymerElements/iron-test-helpers#1 - 2",
+    "test-fixture": "PolymerElements/test-fixture#^3.0.0-rc.1",
+    "web-component-tester": "^6.0.0",
+    "webcomponentsjs": "webcomponents/webcomponentsjs#^1.0.0"
+  },
+  "variants": {
+    "1.x": {
+      "dependencies": {
+        "polymer": "Polymer/polymer#^1.9",
+        "ace-builds": "~1.2.0"
+      },
+      "devDependencies": {
+        "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
+        "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^1.0.0",
+        "iron-icon": "PolymerElements/iron-icon#^1.0.0",
+        "iron-icons": "PolymerElements/iron-icons#^1.0.0",
+        "iron-test-helpers": "PolymerElements/iron-test-helpers#^1.0.0",
+        "test-fixture": "PolymerElements/test-fixture#^1.0.0",
+        "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.0",
+        "web-component-tester": "Polymer/web-component-tester#^4.0.0"
+      },
+      "resolutions": {
+        "webcomponentsjs": "^0.7"
+      }
+    }
+  },
+  "_release": "f74c250bfc",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "f74c250bfcbc35904432c117f6685ec380fbbd16"
+  },
+  "_source": "https://github.com/LostInBrittany/ace-widget.git",
+  "_target": "master",
+  "_originalSource": "LostInBrittany/ace-widget",
+  "_direct": true
+}

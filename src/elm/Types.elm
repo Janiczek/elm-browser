@@ -1,7 +1,7 @@
 module Types exposing (..)
 
-import Json.Encode as JE
 import Html exposing (Html)
+import Json.Encode as JE
 
 
 type Msg
@@ -9,6 +9,7 @@ type Msg
     | CloseProject
     | ShowFooterMsg ( Html Msg, String )
     | HideFooterMsg
+    | EditorChanged
     | MsgForElm MsgForElm
     | LogError String
     | SelectOne Column Identifier
@@ -21,7 +22,7 @@ type MsgForElectron
     | ErrorLogRequested String
     | CreateIndex
     | ChangeTitle String
-    | SetEditorModel { sourceCode : String, language : Language }
+    | FetchEditorValue
 
 
 type MsgForElm
@@ -29,6 +30,7 @@ type MsgForElm
     | NoProjectPathChosen
     | ProjectClosed
     | IndexCreated Index
+    | EditorValue String
 
 
 type alias Model =
@@ -52,16 +54,16 @@ type Column
     | DefinitionColumn
 
 
-type Language
-    = Elm
-    | JavaScript
-
-
 type alias Selection =
     { packages : List Identifier
     , modules : List Identifier
-    , definitions : List Identifier
+    , definition : Maybe Identifier
     }
+
+
+type Language
+    = Elm
+    | JavaScript
 
 
 type alias Index =
@@ -69,9 +71,9 @@ type alias Index =
 
 
 type alias Package =
-    { author : Author
-    , name : PackageName
-    , version : Version
+    { author : String
+    , name : String
+    , version : String
     , isUserPackage : Bool
     , containsEffectModules : Bool
     , containsNativeModules : Bool
@@ -94,18 +96,6 @@ type alias CommonDefinition a =
         | name : DefinitionName
         , isExposed : Bool
     }
-
-
-type alias Author =
-    String
-
-
-type alias PackageName =
-    String
-
-
-type alias Version =
-    String
 
 
 type alias ModuleName =

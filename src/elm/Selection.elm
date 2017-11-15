@@ -27,5 +27,6 @@ isModuleSelected module_ selection =
 
 isDefinitionSelected : ModuleName -> CommonDefinition a -> Selection -> Bool
 isDefinitionSelected moduleName definitionOrConstructor selection =
-    selection.definitions
-        |> List.member (definitionIdentifier moduleName definitionOrConstructor)
+    selection.definition
+        |> Maybe.map (\selectedDefinition -> selectedDefinition == definitionIdentifier moduleName definitionOrConstructor)
+        |> Maybe.withDefault False

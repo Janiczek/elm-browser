@@ -1,0 +1,114 @@
+<!--
+@author Horacio Gonzalez (@lostinbrittany)
+@license Apache 2.0
+Inspired by [ace-shim-about-shadow-dom project](https://github.com/valaxy/ace-shim-about-shadow-dom/)
+
+A behavior to allow ace-edit to work under ShadowDom. If the app is in ShadowDOM mode, it copies ace-editor's styles into the component ShadowDOM.
+-->
+<script>
+
+  AceWidgetShadowDom = (function(){
+    var aceShadowRoots = [];
+    var AceWidgetShadowDom = {
+      // Properties
+      properties: {
+        _styles: {
+          type: Array,
+        },
+        _domHook: {
+          type: Object,
+        },
+      },
+
+      init: function() { 
+        // console.log("Shadow", window.Polymer.Settings)       
+        if (window.Polymer.Settings.dom === 'shadow' || window.Polymer.Settings.useShadow ) {        
+          aceShadowRoots.push(Polymer.dom(this.root));
+          this._hookDom();
+          this._getStyle();
+          this._hookEditor();
+          this._fixStyle();
+        }
+      }, 
+
+      _hookDom: function() {
+        var root = this.root;
+
+        this._domHook = ace.require('ace/lib/dom')
+        var dom = {
+          getDocumentHead: this._domHook.getDocumentHead,
+          importCssString: this._domHook.importCssString,
+          hasCssString   : this._domHook.hasCssString
+        }
+
+        var docHook = {
+          createElement : document.createElement.bind(document),
+          createTextNode: document.createTextNode.bind(document),
+          cssHead       : null // change by importCssString
+        }
+        this._domHook.getDocumentHead = function (doc) {
+          if (doc === docHook) {
+            return docHook.cssHead;
+          }
+          return dom.getDocumentHead.apply(doc, arguments);
+        }
+
+        this._domHook.hasCssString = function (id, doc) {
+          if (doc === docHook) {
+            var index = 0, sheets;
+            doc = docHook.cssHead || document;
+            if (doc.createStyleSheet && (sheets = doc.styleSheets)) {
+                while (index < sheets.length)
+                    if (sheets[index++].owningElement.id === id) return true;
+            } else if ((sheets = Polymer.dom(doc).querySelectorAll(("style")))) {
+                while (index < sheets.length)
+                    if (sheets[index++].id === id) return true;
+            }
+
+            return false;
+
+          }
+          return dom.hasCssString(id, doc);
+        }
+        this._domHook.importCssString = function (cssText, id, doc) { 
+          var result
+			    aceShadowRoots.forEach(function (cssHead) {
+				    docHook.cssHead = cssHead
+				    result = dom.importCssString.call(this, cssText, id, docHook)
+			    })
+			    return result
+        }
+      },
+      _getStyle: function() {
+        var style1 = document.getElementById('ace_editor.css') || document.getElementById('ace_editor');
+        var style2 = document.getElementById('ace-tm');
+        var style3 = style2.nextSibling;
+
+        this._styles = [style1, style2, style3];
+        this._styles.forEach(function (style) {
+         //  style.parentNode.removeChild(style)
+        });      
+      },
+      _hookEditor: function() {
+        var EditorHook = ace.require('ace/editor').Editor;
+        var Editor = {
+          setTheme: EditorHook.prototype.setTheme
+        }
+
+        EditorHook.prototype.setTheme = function () {
+          Editor.setTheme.apply(this, arguments);
+        }      
+      },
+      _addEditor: function() {
+        this._fixStyle();
+      },
+      _fixStyle: function() {
+        var root = this.root
+        this._styles.forEach(function (style) { 
+          Polymer.dom(root).appendChild(style.cloneNode(true));
+        })      
+      }
+    };
+    return AceWidgetShadowDom;
+  })();
+</script>

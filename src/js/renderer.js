@@ -1,7 +1,6 @@
 const electron = require('electron');
 const {remote, ipcRenderer} = electron;
 const Elm = require('../../dist/js/elm.js');
-const monacoLoader = require('monaco-loader');
 
 const mainProcess = remote.require('./main.js');
 const app = Elm.Main.fullscreen();
@@ -40,8 +39,8 @@ app.ports.msgForElectron.subscribe(msgForElectron => {
         changeTitle(data);
         break;
 
-    case 'SetEditorModel':
-        setEditorModel(data);
+    case 'FetchEditorValue':
+        fetchEditorValue();
         break;
 
     default:
@@ -67,10 +66,8 @@ const errorLogRequested = error => {
 
 const createIndex = () => {
     // TODO in future do things in the main thread, not the renderer thread?
+    // TODO real data
     const index = require('../project_index_dummy.json');
-    //setTimeout(function(){
-    //    sendToElm('IndexCreated', index);
-    //}, 1000);
     sendToElm('IndexCreated', index);
 };
 
@@ -78,6 +75,11 @@ const changeTitle = newTitle => {
     document.title = newTitle;
 };
 
-const setEditorModel = ({sourceCode, language}) => {
-//    editor.setModel(monaco.editor.createModel(sourceCode, language));
+const fetchEditorValue = () => {
+    const ace = document.querySelector('ace-widget');
+    if (ace === undefined || ace === null) {
+        console.error("Elm requested editor value, but the editor can't be found!");
+    }
+    const value = ace.editor.getValue();
+    sendToElm('EditorValue', value);
 };

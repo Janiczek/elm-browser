@@ -1,0 +1,78 @@
+<!--
+@author Horacio Gonzalez (@lostinbrittany)
+@copyright (c) 2016 Cityzen Data
+@license Apache 2.0
+-->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+
+  <title>Ace widget Shaddy Dom test</title>
+
+  <meta name="theme-color" content="#fff">
+
+  <script>
+
+    // setup Polymer options
+    window.Polymer = {lazyRegister: true};
+
+    // load webcomponents polyfills
+    (function() {
+      if ('registerElement' in document
+          && 'import' in document.createElement('link')
+          && 'content' in document.createElement('template')) {
+        // browser has web components
+      } else {
+        // polyfill web components
+        var e = document.createElement('script');
+        e.src = '../webcomponentsjs/webcomponents-lite.min.js';
+        document.head.appendChild(e);
+      }
+    })();
+
+
+  </script>
+  <link rel="import" href="../polymer/polymer.html">
+
+  <link rel="import"  href="../ace-widget/ace-widget.html">
+
+  <style>
+
+    body {
+      margin: 0;
+      font-family: 'Roboto', 'Noto', sans-serif;
+      line-height: 1.5;
+      min-height: 100vh;
+      background-color: #eee;
+    }
+
+    .container {
+      padding: 15px;
+    }
+
+  </style>
+
+</head>
+<body>
+
+  <div class="container">
+    <template is="dom-bind" id="template">
+
+      <ace-widget   
+        theme="ace/theme/eclipse" 
+        softtabs="true" 
+        wrap="true" 
+        value="This is a nice widget">
+      </ace-widget>
+   
+    </template>
+  </div>
+
+  <script>      
+    var template = document.querySelector('#template');
+  </script>
+
+</body>
+</html>

@@ -28,24 +28,8 @@ sendMsgForElectron msg =
             ChangeTitle title ->
                 { tag = "ChangeTitle", data = JE.string title }
 
-            SetEditorModel { sourceCode, language } ->
-                { tag = "SetEditorModel"
-                , data =
-                    JE.object
-                        [ ( "sourceCode", JE.string sourceCode )
-                        , ( "language", JE.string <| languageString language )
-                        ]
-                }
-
-
-languageString : Language -> String
-languageString language =
-    case language of
-        Elm ->
-            "elm"
-
-        JavaScript ->
-            "javascript"
+            FetchEditorValue ->
+                { tag = "FetchEditorValue", data = JE.null }
 
 
 getMsgForElm : (MsgForElm -> msg) -> (String -> msg) -> Sub msg
@@ -74,6 +58,14 @@ getMsgForElm tagger onError =
 
                         Err e ->
                             onError <| "Invalid data for IndexCreated: " ++ e
+
+                "EditorValue" ->
+                    case JD.decodeValue JD.string portData.data of
+                        Ok sourceCode ->
+                            tagger <| EditorValue sourceCode
+
+                        Err e ->
+                            onError <| "Invalid data for EditorValue: " ++ e
 
                 _ ->
                     onError <| "Unexpected Msg for Elm: " ++ toString portData
