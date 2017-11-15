@@ -131,6 +131,7 @@ topTable selection index =
 
 bottomTable : Selection -> Index -> Html Msg
 bottomTable selection index =
+    -- TODO do something about the huge filesize of the ace-widget components folder
     let
         sourceCode =
             index
