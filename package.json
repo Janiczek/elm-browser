@@ -4,8 +4,8 @@
   "description": "Smalltalk-like System Browser for Elm projects",
   "main": "src/js/main.js",
   "scripts": {
-    "start": "cp src/elm/.Main.elm.normal src/elm/Main.elm && elm-make src/elm/Main.elm --warn --output dist/js/elm.js && electron .",
-    "debug": "cp src/elm/.Main.elm.debug src/elm/Main.elm && elm-make src/elm/Main.elm --warn --output dist/js/elm.js && electron ."
+    "start": "cp src/elm/.Main.elm.normal src/elm/Main.elm && elm-make src/elm/Main.elm --yes --warn --output dist/js/elm.js && electron .",
+    "debug": "cp src/elm/.Main.elm.debug src/elm/Main.elm && elm-make src/elm/Main.elm --yes --warn --output dist/js/elm.js && electron ."
   },
   "repository": "https://github.com/janiczek/elm-browser",
   "keywords": [
