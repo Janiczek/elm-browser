@@ -7,3 +7,5 @@ yarn && yarn start
 ```
 
 <img alt="App Screenshot" src="https://github.com/Janiczek/elm-browser/raw/master/resources/readme/app.png" width="640">
+
+<img alt="TODO" src="https://github.com/Janiczek/elm-browser/raw/master/resources/readme/todo.png">

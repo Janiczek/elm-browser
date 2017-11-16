@@ -1,0 +1,116 @@
+digraph G {
+
+node [shape = box];
+
+"elm-browser" [style = filled,color="#111111",fillcolor="#333333",fontcolor="#eeeeee"];
+
+// ELM-BROWSER
+
+subgraph cluster_0 {
+
+  style=filled;
+  color=grey;
+  fillcolor=lightgrey;
+  node [style=filled,color=grey,fillcolor=white];
+
+  "filtering" [style = filled,color="#aadd11",fillcolor="#ccff44"];
+  "code editor" [style = filled,color="#ddaa11",fillcolor="#ffcc44"];
+  "indexing" [style = filled,color="#99aadd",fillcolor="#aaddff"];
+
+}
+
+"filtering" -> "elm-browser";
+"code editor" -> "elm-browser";
+"indexing" -> "elm-browser";
+
+// FILTERING
+
+subgraph cluster_1 {
+
+  style=filled;
+  color="#aadd11";
+  fillcolor="#ccff44";
+  node [style=filled,color="#aadd11", fillcolor=white];
+
+  "tests for view fns";
+  "was the dict rewrite worth it?";
+  "header filter icons";
+  "fourth column?";
+
+}
+
+"tests for view fns" -> "filtering";
+"was the dict rewrite worth it?" -> "filtering";
+"header filter icons" -> "filtering";
+"fourth column?" -> "filtering";
+
+// CODE EDITOR
+
+subgraph cluster_2 {
+
+  style=filled;
+  color="#ddaa11";
+  fillcolor="#ffcc44";
+  node [style=filled,color="#ddaa11", fillcolor=white];
+
+  {rank=same "saving changes" "height problem" "vim mode" "(?) auto completion"}
+
+  "saving changes";
+  "height problem";
+  "vim mode";
+  "(?) auto completion";
+
+  "new metadata in index" -> "saving changes";
+  "fn 'replace bytex x-y with string'" -> "saving changes";
+
+  "will reindex be needed?" -> "fn 'replace bytex x-y with string'";
+
+  "file path" -> "new metadata in index";
+  "starting byte" -> "new metadata in index";
+  "(?) ending byte" -> "new metadata in index";
+
+}
+
+"saving changes" -> "code editor";
+"height problem" -> "code editor";
+"vim mode" -> "code editor";
+"(?) auto completion" -> "code editor";
+
+// INDEXING
+
+subgraph cluster_3 {
+
+  style=filled;
+  color="#99aadd";
+  fillcolor="#aaddff";
+  node [style=filled,color="#99aadd", fillcolor=white];
+
+  {rank=same "packages" "modules" "definitions"}
+  {rank=same "elm-package.json" "*.elm" "(?) /^[^ ]/"}
+  {rank=same "elm-stuff/packages/*/*/elm-package.json" "Native/**/*.js"}
+  
+  "Native/**/*.js" -> "*.elm" -> "modules" [style=invis];
+
+  "packages";
+  "modules";
+  "definitions";
+
+  "elm-package.json" -> "packages";
+  "elm-stuff/packages/*/*/elm-package.json" -> "packages";
+
+  "*.elm" -> "modules";
+  "Native/**/*.js" -> "modules";
+
+  "(?) /^[^ ]/" -> "definitions";
+
+}
+
+"packages" -> "indexing";
+"modules" -> "indexing";
+"definitions" -> "indexing";
+
+// -------------------
+
+rankdir=BT;
+
+}
