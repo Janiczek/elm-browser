@@ -161,6 +161,13 @@ selectedModuleIdAndDefinition selection index =
     Maybe.map2 (,)
         (moduleIdForSelectedDefinition selection index)
         (selectedDefinition selection index)
+        |> Maybe.andThen
+            (\( moduleId, definition ) ->
+                if selection.module_ == (Just moduleId) then
+                    Just ( moduleId, definition )
+                else
+                    Nothing
+            )
 
 
 selectedDefinition : Selection -> Index -> Maybe Definition
