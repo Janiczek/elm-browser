@@ -1,18 +1,23 @@
-module Index exposing (decoder, sourceCode, language, definitionsWithModuleName)
+module Index exposing (..)
 
+import EveryDict as EDict exposing (EveryDict)
+import EverySet as ESet exposing (EverySet)
 import Json.Decode as JD exposing (Decoder)
+import Maybe.Extra as Maybe
 import Selection
 import Types exposing (..)
+import Types.Json exposing (..)
+import Utils
 
 
-decoder : Decoder Index
+decoder : Decoder JsonIndex
 decoder =
     JD.list package
 
 
-package : Decoder Package
+package : Decoder JsonPackage
 package =
-    JD.map7 Package
+    JD.map7 JsonPackage
         (JD.field "author" JD.string)
         (JD.field "name" JD.string)
         (JD.field "version" JD.string)
@@ -22,15 +27,16 @@ package =
         (JD.field "modules" (JD.list module_))
 
 
-module_ : Decoder Module
+module_ : Decoder JsonModule
 module_ =
-    JD.map6 Module
+    JD.map7 JsonModule
         (JD.field "name" JD.string)
         (JD.field "isExposed" JD.bool)
         (JD.field "isEffect" JD.bool)
         (JD.field "isNative" JD.bool)
         (JD.field "isPort" JD.bool)
         (JD.field "definitions" (JD.list definition))
+        (JD.field "language" language)
 
 
 definition : Decoder Definition
@@ -40,6 +46,23 @@ definition =
         definitionKind
         (JD.field "isExposed" JD.bool)
         (JD.field "sourceCode" JD.string)
+
+
+language : Decoder Language
+language =
+    JD.string
+        |> JD.andThen
+            (\string ->
+                case string of
+                    "javascript" ->
+                        JD.succeed JavaScript
+
+                    "elm" ->
+                        JD.succeed Elm
+
+                    _ ->
+                        JD.fail "Unknown language"
+            )
 
 
 definitionKind : Decoder DefinitionKind
@@ -98,83 +121,156 @@ typeAlias =
 
 sourceCode : Selection -> Index -> Maybe String
 sourceCode selection index =
-    selectedModuleNameAndDefinition selection index
+    selectedModuleIdAndDefinition selection index
         |> ifInSelectedPackage selection index
         |> Maybe.map (\( _, definition ) -> definition.sourceCode)
 
 
-language : Selection -> Index -> Maybe Language
-language selection index =
+selectedLanguage : Selection -> Index -> Maybe Language
+selectedLanguage selection index =
     moduleForSelectedDefinition selection index
-        |> Maybe.map languageForModule
+        |> Maybe.map .language
 
 
 moduleForSelectedDefinition : Selection -> Index -> Maybe Module
 moduleForSelectedDefinition selection index =
-    selectedModuleNameAndDefinition selection index
-        |> Maybe.map (\( moduleName, _ ) -> moduleName)
-        |> Maybe.andThen
-            (\moduleName ->
-                index
-                    |> List.concatMap .modules
-                    |> List.filter (\module_ -> module_.name == moduleName)
-                    |> List.head
-            )
-
-
-selectedModuleNameAndDefinition : Selection -> Index -> Maybe ( ModuleName, Definition )
-selectedModuleNameAndDefinition selection index =
     selection.definition
         |> Maybe.andThen
-            (\selectedDefinition ->
-                index
-                    |> List.concatMap .modules
-                    |> definitionsWithModuleName
-                    |> List.filter
-                        (\( moduleName, definition ) ->
-                            Selection.definitionIdentifier moduleName definition == selectedDefinition
-                        )
+            (\definitionId ->
+                index.modules
+                    |> EDict.filter (\_ module_ -> ESet.member definitionId module_.definitions)
+                    |> EDict.values
                     |> List.head
             )
 
 
-ifInSelectedPackage : Selection -> Index -> Maybe ( ModuleName, Definition ) -> Maybe ( ModuleName, Definition )
-ifInSelectedPackage selection index maybeModuleNameAndDefinition =
-    maybeModuleNameAndDefinition
+moduleIdForSelectedDefinition : Selection -> Index -> Maybe ModuleOnlyId
+moduleIdForSelectedDefinition selection index =
+    selection.definition
         |> Maybe.andThen
-            (\( moduleName, definition ) ->
-                selectedPackages selection index
-                    |> List.concatMap .modules
-                    |> List.filter (\module_ -> module_.name == moduleName)
-                    -- if exists, return what you got:
+            (\definitionId ->
+                index.modules
+                    |> EDict.filter (\_ module_ -> ESet.member definitionId module_.definitions)
+                    |> EDict.keys
                     |> List.head
-                    |> Maybe.map (\_ -> ( moduleName, definition ))
             )
 
 
-languageForModule : Module -> Language
-languageForModule module_ =
-    if module_.isNative then
-        JavaScript
-    else
-        Elm
+selectedModuleIdAndDefinition : Selection -> Index -> Maybe ( ModuleOnlyId, Definition )
+selectedModuleIdAndDefinition selection index =
+    Maybe.map2 (,)
+        (moduleIdForSelectedDefinition selection index)
+        (selectedDefinition selection index)
 
 
-selectedPackages : Selection -> Index -> List Package
+selectedDefinition : Selection -> Index -> Maybe Definition
+selectedDefinition selection index =
+    selection.definition
+        |> Maybe.andThen (\selectedDefinitionId -> EDict.get selectedDefinitionId index.definitions)
+
+
+selectedDefinitionAndId : Selection -> Index -> Maybe ( DefinitionOnlyId, Definition )
+selectedDefinitionAndId selection index =
+    Maybe.map2 (,)
+        selection.definition
+        (selectedDefinition selection index)
+
+
+ifInSelectedPackage :
+    Selection
+    -> Index
+    -> Maybe ( ModuleOnlyId, Definition )
+    -> Maybe ( ModuleOnlyId, Definition )
+ifInSelectedPackage selection index maybeModuleIdAndDefinition =
+    maybeModuleIdAndDefinition
+        |> Maybe.filter (\( moduleId, definition ) -> moduleIsInSelectedPackage selection index moduleId)
+
+
+moduleIsInSelectedPackage : Selection -> Index -> ModuleOnlyId -> Bool
+moduleIsInSelectedPackage selection index moduleId =
+    selectedPackages selection index
+        |> ESet.map .modules
+        |> ESet.toList
+        |> List.foldl ESet.union ESet.empty
+        |> ESet.member moduleId
+
+
+selectedPackages : Selection -> Index -> EverySet Package
 selectedPackages selection index =
-    index
-        |> List.filter
-            (\package ->
-                selection.packages
-                    |> List.member (Selection.packageIdentifier package)
-            )
+    index.packages
+        |> EDict.filter (\packageId _ -> ESet.member packageId selection.packages)
+        |> Utils.dictValuesToSet
 
 
-definitionsWithModuleName : List Module -> List ( ModuleName, Definition )
-definitionsWithModuleName modules =
-    modules
-        |> List.concatMap
-            (\module_ ->
-                module_.definitions
-                    |> List.map (\definition -> ( module_.name, definition ))
-            )
+empty : Index
+empty =
+    { packages = EDict.empty
+    , modules = EDict.empty
+    , definitions = EDict.empty
+    }
+
+
+normalize : JsonIndex -> Index
+normalize index =
+    let
+        modulesToIds : List JsonModule -> ModuleIds
+        modulesToIds modules =
+            modules
+                |> List.map Selection.moduleId
+                |> ESet.fromList
+
+        packages =
+            index
+                |> List.map (\package -> { package | modules = modulesToIds package.modules })
+                |> List.map (\package -> ( Selection.packageId package, package ))
+                |> EDict.fromList
+
+        definitionsToIds : String -> List Definition -> DefinitionIds
+        definitionsToIds moduleName definitions =
+            definitions
+                |> List.map (Selection.definitionId moduleName)
+                |> ESet.fromList
+
+        modules =
+            index
+                |> List.concatMap .modules
+                |> List.map
+                    (\module_ ->
+                        { module_
+                            | definitions =
+                                definitionsToIds
+                                    module_.name
+                                    module_.definitions
+                        }
+                    )
+                |> List.map
+                    (\module_ ->
+                        ( Selection.moduleId module_
+                        , module_
+                        )
+                    )
+                |> EDict.fromList
+
+        definitions =
+            -- (ModuleName, Definition)
+            -- EDict DefinitionId Definition
+            index
+                |> List.concatMap .modules
+                |> List.map (\module_ -> ( module_.name, module_.definitions ))
+                |> List.concatMap
+                    (\( moduleName, definitions ) ->
+                        definitions
+                            |> List.map (\definition -> ( moduleName, definition ))
+                    )
+                |> List.map
+                    (\( moduleName, definition ) ->
+                        ( Selection.definitionId moduleName definition
+                        , definition
+                        )
+                    )
+                |> EDict.fromList
+    in
+        { packages = packages
+        , modules = modules
+        , definitions = definitions
+        }

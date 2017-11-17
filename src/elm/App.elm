@@ -1,6 +1,8 @@
 module App exposing (init, update, subscriptions)
 
+import EverySet as ESet
 import Ports
+import Selection
 import Types exposing (..)
 
 
@@ -49,7 +51,7 @@ update msg model =
                             Just
                                 { rootPath = path
                                 , index = Nothing
-                                , selection = Selection [] [] Nothing
+                                , selection = Selection.empty
                                 }
                       }
                     , Cmd.batch
@@ -92,38 +94,38 @@ update msg model =
             , Ports.sendMsgForElectron (ErrorLogRequested err)
             )
 
-        SelectOne column identifier ->
+        SelectOne id ->
             let
                 newProject =
                     model.project
                         |> Maybe.map
                             (\project ->
-                                case column of
-                                    PackageColumn ->
+                                case id of
+                                    PackageId packageId ->
                                         { project
                                             | selection =
                                                 Selection
-                                                    [ identifier ]
-                                                    project.selection.modules
+                                                    (ESet.singleton packageId)
+                                                    project.selection.module_
                                                     project.selection.definition
                                         }
 
-                                    ModuleColumn ->
+                                    ModuleId moduleId ->
                                         { project
                                             | selection =
                                                 Selection
                                                     project.selection.packages
-                                                    [ identifier ]
+                                                    (Just moduleId)
                                                     project.selection.definition
                                         }
 
-                                    DefinitionColumn ->
+                                    DefinitionId definitionId ->
                                         { project
                                             | selection =
                                                 Selection
                                                     project.selection.packages
-                                                    project.selection.modules
-                                                    (Just identifier)
+                                                    project.selection.module_
+                                                    (Just definitionId)
                                         }
                             )
             in
@@ -131,38 +133,38 @@ update msg model =
                 , Cmd.none
                 )
 
-        SelectAnother column identifier ->
+        SelectAnother id ->
             let
                 newProject =
                     model.project
                         |> Maybe.map
                             (\project ->
-                                case column of
-                                    PackageColumn ->
+                                case id of
+                                    PackageId packageId ->
                                         { project
                                             | selection =
                                                 Selection
-                                                    (identifier :: project.selection.packages)
-                                                    project.selection.modules
+                                                    (ESet.insert packageId project.selection.packages)
+                                                    project.selection.module_
                                                     project.selection.definition
                                         }
 
-                                    ModuleColumn ->
+                                    ModuleId moduleId ->
                                         { project
                                             | selection =
                                                 Selection
                                                     project.selection.packages
-                                                    (identifier :: project.selection.modules)
+                                                    (Just moduleId)
                                                     project.selection.definition
                                         }
 
-                                    DefinitionColumn ->
+                                    DefinitionId definitionId ->
                                         { project
                                             | selection =
                                                 Selection
                                                     project.selection.packages
-                                                    project.selection.modules
-                                                    (Just identifier)
+                                                    project.selection.module_
+                                                    (Just definitionId)
                                         }
                             )
             in
@@ -170,42 +172,38 @@ update msg model =
                 , Cmd.none
                 )
 
-        Deselect column identifier ->
+        Deselect id ->
             let
                 newProject =
                     model.project
                         |> Maybe.map
                             (\project ->
-                                case column of
+                                case id of
                                     -- TODO maybe filter all descendants also?
-                                    PackageColumn ->
+                                    PackageId packageId ->
                                         { project
                                             | selection =
                                                 Selection
-                                                    (project.selection.packages
-                                                        |> List.filter (\package -> identifier /= package)
-                                                    )
-                                                    project.selection.modules
+                                                    (ESet.remove packageId project.selection.packages)
+                                                    project.selection.module_
                                                     project.selection.definition
                                         }
 
-                                    ModuleColumn ->
+                                    ModuleId moduleId ->
                                         { project
                                             | selection =
                                                 Selection
                                                     project.selection.packages
-                                                    (project.selection.modules
-                                                        |> List.filter (\module_ -> identifier /= module_)
-                                                    )
+                                                    Nothing
                                                     project.selection.definition
                                         }
 
-                                    DefinitionColumn ->
+                                    DefinitionId _ ->
                                         { project
                                             | selection =
                                                 Selection
                                                     project.selection.packages
-                                                    project.selection.modules
+                                                    project.selection.module_
                                                     Nothing
                                         }
                             )

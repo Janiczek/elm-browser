@@ -19,6 +19,7 @@
   "license": "BSD-3-Clause",
   "devDependencies": {
     "devtron": "^1.4.0",
-    "electron": "~1.8.1"
+    "electron": "~1.8.1",
+    "elm-test": "^0.18.9"
   }
 }

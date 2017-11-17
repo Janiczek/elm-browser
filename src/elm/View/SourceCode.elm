@@ -18,7 +18,7 @@ sourceCode selection index =
 
         language =
             index
-                |> Index.language selection
+                |> Index.selectedLanguage selection
                 |> Maybe.withDefault Elm
                 |> languageToMode
     in

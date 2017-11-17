@@ -1,5 +1,7 @@
 module Types exposing (..)
 
+import EveryDict exposing (EveryDict)
+import EverySet exposing (EverySet)
 import Html exposing (Html)
 import Json.Encode as JE
 
@@ -12,9 +14,9 @@ type Msg
     | EditorChanged
     | MsgForElm MsgForElm
     | LogError String
-    | SelectOne Column Identifier
-    | SelectAnother Column Identifier
-    | Deselect Column Identifier
+    | SelectOne Id
+    | SelectAnother Id
+    | Deselect Id
 
 
 type MsgForElectron
@@ -48,26 +50,22 @@ type alias Project =
     }
 
 
-type Column
-    = PackageColumn
-    | ModuleColumn
-    | DefinitionColumn
-
-
 type alias Selection =
-    { packages : List Identifier
-    , modules : List Identifier
-    , definition : Maybe Identifier
+    { packages : PackageIds
+
+    -- TODO is there any use for multiple modules selection?
+    , module_ : Maybe ModuleOnlyId
+
+    -- TODO maybe later: select more definitions -> diff
+    , definition : Maybe DefinitionOnlyId
     }
 
 
-type Language
-    = Elm
-    | JavaScript
-
-
 type alias Index =
-    List Package
+    { packages : Packages
+    , modules : Modules
+    , definitions : Definitions
+    }
 
 
 type alias Package =
@@ -77,60 +75,98 @@ type alias Package =
     , isUserPackage : Bool
     , containsEffectModules : Bool
     , containsNativeModules : Bool
-    , modules : List Module
+    , modules : ModuleIds
     }
 
 
 type alias Module =
-    { name : ModuleName
+    { name : String
     , isExposed : Bool
     , isEffect : Bool
     , isNative : Bool
     , isPort : Bool
-    , definitions : List Definition
+    , definitions : DefinitionIds
+    , language : Language
     }
-
-
-type alias CommonDefinition a =
-    { a
-        | name : DefinitionName
-        , isExposed : Bool
-    }
-
-
-type alias ModuleName =
-    String
 
 
 type alias Definition =
-    { name : DefinitionName
+    { name : String
     , kind : DefinitionKind
     , isExposed : Bool
     , sourceCode : String
     }
 
 
+type alias Named a =
+    { a | name : String }
+
+
+type alias CommonDefinition a =
+    Named { a | isExposed : Bool }
+
+
+type Language
+    = -- TODO HTML, CSS?
+      Elm
+    | JavaScript
+
+
+type alias Packages =
+    EveryDict PackageOnlyId Package
+
+
+type alias Modules =
+    EveryDict ModuleOnlyId Module
+
+
+type alias Definitions =
+    EveryDict DefinitionOnlyId Definition
+
+
+type alias PackageIds =
+    EverySet PackageOnlyId
+
+
+type alias ModuleIds =
+    EverySet ModuleOnlyId
+
+
+type alias DefinitionIds =
+    EverySet DefinitionOnlyId
+
+
+type PackageOnlyId
+    = PackageOnlyId String
+
+
+type ModuleOnlyId
+    = ModuleOnlyId String
+
+
+type DefinitionOnlyId
+    = DefinitionOnlyId String
+
+
+type Id
+    = PackageId PackageOnlyId
+    | ModuleId ModuleOnlyId
+    | DefinitionId DefinitionOnlyId
+
+
 type DefinitionKind
-    = Constant { type_ : DefinitionType }
-    | Function { type_ : DefinitionType }
+    = Constant { type_ : String }
+    | Function { type_ : String }
     | Type
-    | TypeConstructor { type_ : DefinitionType }
+    | TypeConstructor { type_ : String }
     | TypeAlias
-
-
-type alias DefinitionName =
-    String
-
-
-type alias DefinitionType =
-    String
-
-
-type alias Identifier =
-    String
 
 
 type alias PortData =
     { tag : String
     , data : JE.Value
     }
+
+
+
+-- TODO fixities somewhere?

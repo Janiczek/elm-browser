@@ -3,6 +3,8 @@ module View exposing (view)
 import Html as H exposing (Html)
 import Html.Attributes as HA
 import Html.Events as HE
+import Index
+import Selection
 import Types exposing (..)
 import View.Column exposing (..)
 import View.Footer exposing (..)
@@ -60,8 +62,8 @@ noProject =
 project : Project -> Html Msg
 project project =
     project.index
-        |> Maybe.map (\packages -> projectWithContent project.selection packages)
-        |> Maybe.withDefault (projectWithContent (Selection [] [] Nothing) [])
+        |> Maybe.map (\index -> projectWithContent project.selection index)
+        |> Maybe.withDefault (projectWithContent Selection.empty Index.empty)
 
 
 projectWithContent : Selection -> Index -> Html Msg

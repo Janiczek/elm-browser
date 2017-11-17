@@ -8,30 +8,27 @@ import Types exposing (..)
 import View.Icon exposing (..)
 
 
-package : Selection -> Package -> Html Msg
-package selection package =
+package : Selection -> PackageOnlyId -> Package -> Html Msg
+package selection packageId package =
     row
-        PackageColumn
-        (Selection.packageIdentifier package)
+        (PackageId packageId)
         (Selection.isPackageSelected selection package)
         (packageRow package)
 
 
-module_ : Selection -> Module -> Html Msg
-module_ selection module_ =
+module_ : Selection -> ModuleOnlyId -> Module -> Html Msg
+module_ selection moduleId module_ =
     row
-        ModuleColumn
-        module_.name
+        (ModuleId moduleId)
         (Selection.isModuleSelected selection module_)
         (moduleRow module_)
 
 
-definition : Selection -> ModuleName -> Definition -> Html Msg
-definition selection moduleName definition =
+definition : Selection -> DefinitionOnlyId -> Definition -> Html Msg
+definition selection definitionId definition =
     row
-        DefinitionColumn
-        (Selection.definitionIdentifier moduleName definition)
-        (Selection.isDefinitionSelected moduleName definition selection)
+        (DefinitionId definitionId)
+        (Selection.isDefinitionSelected definitionId definition selection)
         (definitionRow definition)
 
 
@@ -93,16 +90,16 @@ definitionRow { name, isExposed } =
         ]
 
 
-row : Column -> Identifier -> Bool -> Html Msg -> Html Msg
-row column identifier isSelected content =
+row : Id -> Bool -> Html Msg -> Html Msg
+row identifier isSelected content =
     -- TODO Ctrl+click for multiple select (and deselect) ... SelectAnother
     -- TODO Shift+click for range select
     H.tr
         [ HE.onClick
             (if isSelected then
-                Deselect column identifier
+                Deselect identifier
              else
-                SelectOne column identifier
+                SelectOne identifier
             )
         ]
         [ H.td

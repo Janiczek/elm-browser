@@ -1,44 +1,61 @@
 module Selection exposing (..)
 
+import EveryDict as EDict
+import EverySet as ESet exposing (EverySet)
 import Types exposing (..)
 
 
-packageIdentifier : Package -> Identifier
-packageIdentifier { author, name } =
-    author ++ "/" ++ name
+packageId : Package -> PackageOnlyId
+packageId { author, name } =
+    PackageOnlyId (author ++ "/" ++ name)
 
 
-definitionIdentifier : ModuleName -> CommonDefinition a -> Identifier
-definitionIdentifier moduleName { name } =
-    moduleName ++ "." ++ name
+moduleId : Named a -> ModuleOnlyId
+moduleId { name } =
+    ModuleOnlyId name
+
+
+definitionId : String -> CommonDefinition a -> DefinitionOnlyId
+definitionId moduleName { name } =
+    DefinitionOnlyId (moduleName ++ "." ++ name)
 
 
 isPackageSelected : Selection -> Package -> Bool
 isPackageSelected selection package =
     selection.packages
-        |> List.member (packageIdentifier package)
+        |> ESet.member (packageId package)
+
+
+isModuleIdSelected : Selection -> ModuleOnlyId -> Bool
+isModuleIdSelected selection moduleId =
+    selection.module_ == Just moduleId
 
 
 isModuleSelected : Selection -> Module -> Bool
 isModuleSelected selection module_ =
-    selection.modules
-        |> List.member module_.name
+    isModuleIdSelected selection (ModuleOnlyId module_.name)
 
 
-isDefinitionSelected : ModuleName -> CommonDefinition a -> Selection -> Bool
-isDefinitionSelected moduleName definitionOrConstructor selection =
+isDefinitionSelected : DefinitionOnlyId -> CommonDefinition a -> Selection -> Bool
+isDefinitionSelected definitionId definitionOrConstructor selection =
     selection.definition
-        |> Maybe.map (\selectedDefinition -> selectedDefinition == definitionIdentifier moduleName definitionOrConstructor)
+        |> Maybe.map (\selectedDefinition -> selectedDefinition == definitionId)
         |> Maybe.withDefault False
 
 
-modulesForPackages : List Identifier -> Index -> List Identifier
+modulesForPackages : EverySet PackageOnlyId -> Index -> EverySet ModuleOnlyId
 modulesForPackages packages index =
-    index
-        |> List.filter
-            (\package ->
-                packages
-                    |> List.member (packageIdentifier package)
-            )
-        |> List.concatMap .modules
-        |> List.map .name
+    index.packages
+        |> EDict.filter (\packageId _ -> ESet.member packageId packages)
+        |> EDict.values
+        |> List.map .modules
+        |> List.concatMap (ESet.toList)
+        |> ESet.fromList
+
+
+empty : Selection
+empty =
+    { packages = ESet.empty
+    , module_ = Nothing
+    , definition = Nothing
+    }

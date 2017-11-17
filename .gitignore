@@ -1,5 +1,6 @@
 /node_modules
 /elm-stuff
+/tests/elm-stuff
 /dist/js/elm.js
 /yarn.lock
 /elm.js

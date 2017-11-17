@@ -54,7 +54,7 @@ getMsgForElm tagger onError =
                 "IndexCreated" ->
                     case JD.decodeValue Index.decoder portData.data of
                         Ok index ->
-                            tagger <| IndexCreated index
+                            tagger <| IndexCreated (Index.normalize index)
 
                         Err e ->
                             onError <| "Invalid data for IndexCreated: " ++ e
