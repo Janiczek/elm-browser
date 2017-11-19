@@ -1,4 +1,4 @@
-module View.Footer exposing (footer)
+module View.Footer exposing (footer, filterTooltip)
 
 import Html as H exposing (Html)
 import Html.Attributes as HA
@@ -41,3 +41,31 @@ spinner =
 allOk : Html Msg
 allOk =
     H.span [ HA.class "icon footer__icon icon-check" ] []
+
+
+filterTooltip : FilterType -> String
+filterTooltip filterType =
+    case filterType of
+        UserPackages ->
+            "User packages"
+
+        DirectDeps ->
+            "Direct dependencies of user packages"
+
+        DepsOfDeps ->
+            "Dependencies of dependencies"
+
+        ExposedModules ->
+            "Exposed modules"
+
+        EffectModules ->
+            "Effect modules"
+
+        NativeModules ->
+            "Native modules"
+
+        PortModules ->
+            "Port modules"
+
+        ExposedDefinitions ->
+            "Exposed definitions"

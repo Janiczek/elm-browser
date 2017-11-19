@@ -5,11 +5,6 @@ import Types exposing (..)
 import View.Icon.Common exposing (..)
 
 
-userPackageIcon : Bool -> Html Msg
-userPackageIcon condition =
-    icon "user" condition "User package"
-
-
 portModuleIcon : Bool -> Html Msg
 portModuleIcon condition =
     iconFa "comments" condition "Port module"
@@ -28,3 +23,31 @@ nativeIcon condition =
 effectIcon : Bool -> Html Msg
 effectIcon condition =
     iconFa "rocket" condition "Effect manager"
+
+
+filterIcon : FilterType -> String
+filterIcon filterType =
+    case filterType of
+        UserPackages ->
+            "icon-user"
+
+        DirectDeps ->
+            "icon-flow-line"
+
+        DepsOfDeps ->
+            "icon-flow-tree"
+
+        ExposedModules ->
+            "icon-eye"
+
+        EffectModules ->
+            "icon--fa fa-rocket"
+
+        NativeModules ->
+            "icon--mfizz icon-javascript-alt"
+
+        PortModules ->
+            "icon--fa fa-comments"
+
+        ExposedDefinitions ->
+            "icon-eye"

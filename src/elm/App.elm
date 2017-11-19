@@ -2,6 +2,7 @@ module App exposing (init, update, subscriptions)
 
 import EverySet as ESet
 import Ports
+import FilterConfig
 import Selection
 import Types exposing (..)
 
@@ -52,6 +53,7 @@ update msg model =
                                 { rootPath = path
                                 , index = Nothing
                                 , selection = Selection.empty
+                                , filterConfig = FilterConfig.empty
                                 }
                       }
                     , Cmd.batch
@@ -211,6 +213,82 @@ update msg model =
                 ( { model | project = newProject }
                 , Cmd.none
                 )
+
+        SetFilter filterType isActive ->
+            let
+                newProject =
+                    model.project
+                        |> Maybe.map
+                            (\project ->
+                                let
+                                    { packages, modules, definitions } =
+                                        project.filterConfig
+                                in
+                                    case filterType of
+                                        UserPackages ->
+                                            { packages | user = isActive }
+                                                |> asPackagesFilterConfigIn project.filterConfig
+                                                |> asFilterConfigIn project
+
+                                        DirectDeps ->
+                                            { packages | directDeps = isActive }
+                                                |> asPackagesFilterConfigIn project.filterConfig
+                                                |> asFilterConfigIn project
+
+                                        DepsOfDeps ->
+                                            { packages | depsOfDeps = isActive }
+                                                |> asPackagesFilterConfigIn project.filterConfig
+                                                |> asFilterConfigIn project
+
+                                        ExposedModules ->
+                                            { modules | exposed = isActive }
+                                                |> asModulesFilterConfigIn project.filterConfig
+                                                |> asFilterConfigIn project
+
+                                        EffectModules ->
+                                            { modules | effect = isActive }
+                                                |> asModulesFilterConfigIn project.filterConfig
+                                                |> asFilterConfigIn project
+
+                                        NativeModules ->
+                                            { modules | native = isActive }
+                                                |> asModulesFilterConfigIn project.filterConfig
+                                                |> asFilterConfigIn project
+
+                                        PortModules ->
+                                            { modules | port_ = isActive }
+                                                |> asModulesFilterConfigIn project.filterConfig
+                                                |> asFilterConfigIn project
+
+                                        ExposedDefinitions ->
+                                            { definitions | exposed = isActive }
+                                                |> asDefinitionsFilterConfigIn project.filterConfig
+                                                |> asFilterConfigIn project
+                            )
+            in
+                ( { model | project = newProject }
+                , Cmd.none
+                )
+
+
+asPackagesFilterConfigIn : FilterConfig -> PackagesFilterConfig -> FilterConfig
+asPackagesFilterConfigIn filterConfig packages =
+    { filterConfig | packages = packages }
+
+
+asModulesFilterConfigIn : FilterConfig -> ModulesFilterConfig -> FilterConfig
+asModulesFilterConfigIn filterConfig modules =
+    { filterConfig | modules = modules }
+
+
+asDefinitionsFilterConfigIn : FilterConfig -> DefinitionsFilterConfig -> FilterConfig
+asDefinitionsFilterConfigIn filterConfig definitions =
+    { filterConfig | definitions = definitions }
+
+
+asFilterConfigIn : Project -> FilterConfig -> Project
+asFilterConfigIn project filterConfig =
+    { project | filterConfig = filterConfig }
 
 
 subscriptions : Model -> Sub Msg

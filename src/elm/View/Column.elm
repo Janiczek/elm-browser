@@ -4,78 +4,207 @@ import EveryDict as EDict
 import EverySet as ESet exposing (EverySet)
 import Html as H exposing (Html)
 import Html.Attributes as HA
+import Html.Events as HE
+import Index
 import Selection
 import Types exposing (..)
 import Utils
+import View.Footer as Footer
+import View.Icon as Icon
 import View.Row as Row
 
 
-columns : Selection -> Index -> Html Msg
-columns selection index =
+columns : Selection -> Index -> FilterConfig -> Html Msg
+columns selection index filterConfig =
     H.div
         [ HA.class "top-table" ]
         [ H.div
             [ HA.class "top-table__headings" ]
-            [ H.div [ HA.class "top-table__heading" ] [ H.text "Packages" ]
-            , H.div [ HA.class "top-table__heading" ] [ H.text "Modules" ]
-            , H.div [ HA.class "top-table__heading" ] [ H.text "Definitions" ]
+            [ packagesHeader filterConfig.packages
+            , modulesHeader filterConfig.modules
+            , definitionsHeader filterConfig.definitions
             ]
         , H.div [ HA.class "top-table__content" ]
-            [ packagesColumn index selection
-            , modulesColumn index selection
-            , definitionsColumn index selection
+            [ packagesColumn index selection filterConfig.packages
+            , modulesColumn index selection filterConfig.modules
+            , definitionsColumn index selection filterConfig.definitions
             ]
         ]
 
 
-packages : Index -> Selection -> List ( PackageOnlyId, Package )
-packages index selection =
-    index.packages
-        |> EDict.toList
+filterButton : FilterType -> Bool -> Html Msg
+filterButton filterType isActive =
+    let
+        filterIcon =
+            Icon.filterIcon filterType
+    in
+        H.button
+            [ HA.classList
+                [ ( "filter__button", True )
+                , ( "btn", True )
+                , ( "btn-mini", True )
+                , ( "btn-default", True )
+                , ( "active", isActive )
+                ]
+            , HE.onMouseEnter
+                (ShowFooterMsg
+                    ( H.span [ HA.class <| "footer__icon icon " ++ filterIcon ] []
+                    , Footer.filterTooltip filterType
+                    )
+                )
+            , HE.onMouseLeave HideFooterMsg
+            , HE.onClick (SetFilter filterType (not isActive))
+            ]
+            [ H.span [ HA.class <| "icon " ++ filterIcon ] [] ]
 
 
-packagesColumn : Index -> Selection -> Html Msg
-packagesColumn index selection =
-    packages index selection
+packages : Index -> PackagesFilterConfig -> List ( PackageOnlyId, Package )
+packages index { user, directDeps, depsOfDeps } =
+    let
+        showAll =
+            not (user || directDeps || depsOfDeps)
+    in
+        index.packages
+            |> EDict.toList
+            |> List.filter
+                (\( _, { dependencyType } ) ->
+                    showAll
+                        || case dependencyType of
+                            UserPackage ->
+                                user
+
+                            DirectDependency ->
+                                directDeps || showAll
+
+                            DependencyOfDependency ->
+                                depsOfDeps
+                )
+            |> List.sortBy
+                (\( PackageOnlyId id, { dependencyType } ) ->
+                    ( case dependencyType of
+                        UserPackage ->
+                            1
+
+                        DirectDependency ->
+                            2
+
+                        DependencyOfDependency ->
+                            3
+                    , id
+                    )
+                )
+
+
+packagesHeader : PackagesFilterConfig -> Html Msg
+packagesHeader { user, directDeps, depsOfDeps } =
+    H.div
+        [ HA.class "top-table__heading" ]
+        [ H.span
+            [ HA.class "top-table__heading__label" ]
+            [ H.text "Packages"
+            ]
+        , H.div
+            [ HA.class "top-table__heading__filters btn-group" ]
+            [ filterButton UserPackages user
+            , filterButton DirectDeps directDeps
+            , filterButton DepsOfDeps depsOfDeps
+            ]
+        ]
+
+
+modulesHeader : ModulesFilterConfig -> Html Msg
+modulesHeader { exposed, effect, native, port_ } =
+    H.div
+        [ HA.class "top-table__heading" ]
+        [ H.span
+            [ HA.class "top-table__heading__label" ]
+            [ H.text "Modules"
+            ]
+        , H.div
+            [ HA.class "top-table__heading__filters btn-group" ]
+            [ filterButton ExposedModules exposed
+            , filterButton EffectModules effect
+            , filterButton NativeModules native
+            , filterButton PortModules port_
+            ]
+        ]
+
+
+definitionsHeader : DefinitionsFilterConfig -> Html Msg
+definitionsHeader { exposed } =
+    H.div
+        [ HA.class "top-table__heading" ]
+        [ H.span
+            [ HA.class "top-table__heading__label" ]
+            [ H.text "Definitions"
+            ]
+        , H.div
+            [ HA.class "top-table__heading__filters btn-group" ]
+            [ filterButton ExposedDefinitions exposed ]
+        ]
+
+
+packagesColumn : Index -> Selection -> PackagesFilterConfig -> Html Msg
+packagesColumn index selection packagesFilterConfig =
+    packages index packagesFilterConfig
         |> List.map (\( packageId, package ) -> Row.package selection packageId package)
         |> innerTable
 
 
-modules : Index -> Selection -> List ( ModuleOnlyId, Module )
-modules index selection =
-    (case packagesForModulesColumn index selection of
-        AllPackages ->
-            index.packages |> Utils.dictKeysToSet
+modules : Index -> Selection -> ModulesFilterConfig -> List ( ModuleOnlyId, Module )
+modules index selection { exposed, effect, native, port_ } =
+    let
+        showAll =
+            not (exposed || effect || native || port_)
+    in
+        (case packagesForModulesColumn index selection of
+            AllPackages ->
+                index.packages |> Utils.dictKeysToSet
 
-        SelectedPackages ->
-            selection.packages
-    )
-        |> (flip Selection.modulesForPackages) index
-        |> Utils.dictGetKv index.modules
+            SelectedPackages ->
+                selection.packages
+        )
+            |> (flip Selection.modulesForPackages) index
+            |> Utils.dictGetKv index.modules
+            |> List.filter
+                (\( _, module_ ) ->
+                    showAll
+                        || List.all (\f -> f module_)
+                            [ \{ isExposed } ->
+                                if exposed then
+                                    isExposed
+                                else
+                                    True
+                            , \{ isEffect } ->
+                                if effect then
+                                    isEffect
+                                else
+                                    True
+                            , \{ isNative } ->
+                                if native then
+                                    isNative
+                                else
+                                    True
+                            , \{ isPort } ->
+                                if port_ then
+                                    isPort
+                                else
+                                    True
+                            ]
+                )
+            |> List.sortBy (\( ModuleOnlyId id, _ ) -> id)
 
 
-modulesColumn : Index -> Selection -> Html Msg
-modulesColumn index selection =
-    modules index selection
+modulesColumn : Index -> Selection -> ModulesFilterConfig -> Html Msg
+modulesColumn index selection modulesFilterConfig =
+    modules index selection modulesFilterConfig
         |> List.map (\( moduleId, module_ ) -> Row.module_ selection moduleId module_)
         |> innerTable
 
 
-definitions : Index -> Selection -> List ( DefinitionOnlyId, Definition )
-definitions index selection =
-    if canShowDefinitionsFromSelectedModule index selection then
-        selection.module_
-            |> Maybe.andThen ((flip EDict.get) index.modules)
-            |> Maybe.map .definitions
-            |> Maybe.withDefault ESet.empty
-            |> Utils.dictGetKv index.definitions
-    else
-        []
-
-
-definitionsColumn : Index -> Selection -> Html Msg
-definitionsColumn index selection =
-    definitions index selection
+definitionsColumn : Index -> Selection -> DefinitionsFilterConfig -> Html Msg
+definitionsColumn index selection definitionsFilterConfig =
+    Index.shownDefinitions index selection definitionsFilterConfig
         |> List.map (\( definitionId, definition ) -> Row.definition selection definitionId definition)
         |> innerTable
 
@@ -91,13 +220,6 @@ packagesForModulesColumn index selection =
         AllPackages
     else
         SelectedPackages
-
-
-canShowDefinitionsFromSelectedModule : Index -> Selection -> Bool
-canShowDefinitionsFromSelectedModule index selection =
-    selection.module_
-        |> Maybe.map (\module_ -> ESet.isEmpty selection.packages || ESet.member module_ (Selection.modulesForPackages selection.packages index))
-        |> Maybe.withDefault True
 
 
 innerTable : List (Html Msg) -> Html Msg

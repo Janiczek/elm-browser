@@ -1,6 +1,7 @@
 module View exposing (view)
 
 import Html as H exposing (Html)
+import FilterConfig
 import Html.Attributes as HA
 import Html.Events as HE
 import Index
@@ -62,14 +63,14 @@ noProject =
 project : Project -> Html Msg
 project project =
     project.index
-        |> Maybe.map (\index -> projectWithContent project.selection index)
-        |> Maybe.withDefault (projectWithContent Selection.empty Index.empty)
+        |> Maybe.map (\index -> projectWithContent project.selection index project.filterConfig)
+        |> Maybe.withDefault (projectWithContent Selection.empty Index.empty FilterConfig.empty)
 
 
-projectWithContent : Selection -> Index -> Html Msg
-projectWithContent selection index =
+projectWithContent : Selection -> Index -> FilterConfig -> Html Msg
+projectWithContent selection index filterConfig =
     H.div
         [ HA.class "main-table" ]
-        [ columns selection index
-        , sourceCode selection index
+        [ columns selection index filterConfig
+        , sourceCode selection index filterConfig
         ]

@@ -12,6 +12,7 @@ type alias JsonPackage =
     , name : String
     , version : String
     , isUserPackage : Bool
+    , isDirectDependency : Bool
     , containsEffectModules : Bool
     , containsNativeModules : Bool
     , modules : List JsonModule

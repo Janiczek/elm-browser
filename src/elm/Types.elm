@@ -17,6 +17,7 @@ type Msg
     | SelectOne Id
     | SelectAnother Id
     | Deselect Id
+    | SetFilter FilterType Bool
 
 
 type MsgForElectron
@@ -47,6 +48,49 @@ type alias Project =
     -- TODO RemoteData ↓
     , index : Maybe Index
     , selection : Selection
+    , filterConfig : FilterConfig
+    }
+
+
+type alias FilterConfig =
+    { packages : PackagesFilterConfig
+    , modules : ModulesFilterConfig
+    , definitions : DefinitionsFilterConfig
+    }
+
+
+type FilterType
+    = -- packages
+      UserPackages
+    | DirectDeps
+    | DepsOfDeps
+      -- modules
+    | ExposedModules
+    | EffectModules
+    | NativeModules
+    | PortModules
+      -- definitions
+    | ExposedDefinitions
+
+
+type alias PackagesFilterConfig =
+    -- TODO maybe effect and native-containing packages? "dangerous?"
+    { user : Bool
+    , directDeps : Bool
+    , depsOfDeps : Bool
+    }
+
+
+type alias ModulesFilterConfig =
+    { exposed : Bool
+    , effect : Bool
+    , native : Bool
+    , port_ : Bool
+    }
+
+
+type alias DefinitionsFilterConfig =
+    { exposed : Bool
     }
 
 
@@ -72,7 +116,7 @@ type alias Package =
     { author : String
     , name : String
     , version : String
-    , isUserPackage : Bool
+    , dependencyType : DependencyType
     , containsEffectModules : Bool
     , containsNativeModules : Bool
     , modules : ModuleIds
@@ -102,8 +146,18 @@ type alias Named a =
     { a | name : String }
 
 
+type alias Authored a =
+    { a | author : String }
+
+
 type alias CommonDefinition a =
     Named { a | isExposed : Bool }
+
+
+type DependencyType
+    = UserPackage
+    | DirectDependency
+    | DependencyOfDependency
 
 
 type Language

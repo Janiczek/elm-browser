@@ -8,12 +8,11 @@ import Json.Decode as JD exposing (Decoder)
 import Types exposing (..)
 
 
-sourceCode : Selection -> Index -> Html Msg
-sourceCode selection index =
+sourceCode : Selection -> Index -> FilterConfig -> Html Msg
+sourceCode selection index filterConfig =
     let
         sourceCode =
-            index
-                |> Index.sourceCode selection
+            Index.sourceCode selection index filterConfig
                 |> Maybe.withDefault ""
 
         language =

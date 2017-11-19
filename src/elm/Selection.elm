@@ -5,7 +5,7 @@ import EverySet as ESet exposing (EverySet)
 import Types exposing (..)
 
 
-packageId : Package -> PackageOnlyId
+packageId : Named (Authored a) -> PackageOnlyId
 packageId { author, name } =
     PackageOnlyId (author ++ "/" ++ name)
 

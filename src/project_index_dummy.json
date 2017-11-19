@@ -22,6 +22,7 @@
         ],
         "name": "project",
         "isUserPackage": true,
+        "isDirectDependency": false,
         "containsEffectModules": false,
         "containsNativeModules": false,
         "version": "1.0.0"
@@ -70,6 +71,7 @@
         ],
         "name": "core",
         "isUserPackage": false,
+        "isDirectDependency": true,
         "containsEffectModules": true,
         "containsNativeModules": true,
         "version": "5.1.1"
@@ -85,6 +87,7 @@
         ],
         "name": "html",
         "isUserPackage": false,
+        "isDirectDependency": true,
         "containsEffectModules": false,
         "containsNativeModules": false,
         "version": "2.0.0"
@@ -105,6 +108,7 @@
         ],
         "name": "virtual-dom",
         "isUserPackage": false,
+        "isDirectDependency": false,
         "containsEffectModules": false,
         "containsNativeModules": true,
         "version": "2.0.4"

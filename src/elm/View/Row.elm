@@ -33,19 +33,23 @@ definition selection definitionId definition =
 
 
 packageRow : Package -> Html Msg
-packageRow { author, name, version, isUserPackage, containsNativeModules, containsEffectModules } =
+packageRow { author, name, version, dependencyType, containsNativeModules, containsEffectModules } =
     H.div
         [ HA.class "identifier" ]
         [ H.span
-            [ HA.class "identifier__content" ]
+            [ HA.classList
+                [ ( "identifier__content", True )
+                , ( "identifier__content--user-package", dependencyType == UserPackage )
+                , ( "identifier__content--dep-of-dep", dependencyType == DependencyOfDependency )
+                ]
+            ]
             [ H.text author
             , divider "/"
             , H.text name
             ]
         , H.span
             [ HA.class "identifier__metadata" ]
-            [ userPackageIcon isUserPackage
-            , nativeIcon containsNativeModules
+            [ nativeIcon containsNativeModules
             , effectIcon containsEffectModules
             , divider "@"
             , H.text version

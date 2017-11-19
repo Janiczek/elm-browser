@@ -33,10 +33,16 @@
 }
 
 .footer__icon:before {
-    display: inline;
+    display: inline-block;
+    text-align: center;
     margin-right: 8px;
     font-size: 16px;
+    width: 16px;
     top: 2px;
+}
+
+.btn-group .btn+.btn.active {
+   border-left: 1px solid #c2c0c2 !important
 }
 
 .spinner:before {
@@ -74,12 +80,32 @@
 .top-table__heading {
     display: flex;
     flex: 1;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
     border-right: 1px solid #ddd;
     border-bottom: 1px solid #ddd;
     color: #888;
     font-weight: 400;
     font-size: 12px;
     padding: 2px 15px;
+}
+
+.top-table__heading__label {
+  display: flex;
+  align-content: center;
+}
+
+.top-table__heading__filters {
+
+}
+
+.filter__button {
+
+}
+
+.filter__button.active {
+
 }
 
 .top-table__content {
@@ -106,6 +132,15 @@
     display: flex;
     flex-direction: row;
     justify-content: space-between;
+}
+
+.identifier__content--user-package {
+  font-weight: bold;
+}
+
+.identifier__content--dep-of-dep {
+  color: #999;
+  font-style: italic;
 }
 
 .identifier__divider {
