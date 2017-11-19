@@ -29,13 +29,11 @@ subgraph cluster_filtering {
   fillcolor="#ccff44";
   node [style=filled,color="#aadd11", fillcolor=white];
 
-  "header filter icons";
   "DefinitionKind column";
   "fulltext";
 
 }
 
-"header filter icons" -> "filtering";
 "DefinitionKind column" -> "filtering";
 "fulltext" -> "filtering";
 
