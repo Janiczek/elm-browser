@@ -2,273 +2,330 @@ module App exposing (init, update, subscriptions)
 
 import EverySet as ESet
 import Ports
+import Html exposing (Html)
 import FilterConfig
+import Cmd.Extra exposing (..)
 import Selection
 import Types exposing (..)
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( { project = Nothing
-      , footerMsg = Nothing
-      }
-    , Cmd.none
-    )
+    { project = Nothing
+    , footerMsg = Nothing
+    }
+        |> withNoCmd
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         AskForProject ->
-            ( model
-            , Ports.sendMsgForElectron ChooseProjectPath
-            )
+            askForProject model
 
         CloseProject ->
-            ( { model | project = Nothing }
-            , Cmd.none
-            )
+            closeProject model
 
         EditorChanged ->
-            ( model
-            , Ports.sendMsgForElectron FetchEditorValue
-            )
+            editorChanged model
 
         ShowFooterMsg footerMsg ->
-            ( { model | footerMsg = Just footerMsg }
-            , Cmd.none
-            )
+            showFooterMsg footerMsg model
 
         HideFooterMsg ->
-            ( { model | footerMsg = Nothing }
-            , Cmd.none
-            )
+            hideFooterMsg model
 
         MsgForElm msgForElm ->
             case msgForElm of
                 ProjectPathChosen path ->
-                    ( { model
-                        | project =
-                            Just
-                                { rootPath = path
-                                , index = Nothing
-                                , selection = Selection.empty
-                                , filterConfig = FilterConfig.empty
-                                }
-                      }
-                    , Cmd.batch
-                        [ Ports.sendMsgForElectron CreateIndex
-                        , Ports.sendMsgForElectron (ChangeTitle (windowTitle (Just path)))
-                        ]
-                    )
+                    projectPathChosen path model
 
                 NoProjectPathChosen ->
-                    ( model
-                    , Cmd.none
-                    )
+                    noProjectPathChosen model
 
                 ProjectClosed ->
-                    ( { model | project = Nothing }
-                    , Ports.sendMsgForElectron (ChangeTitle (windowTitle Nothing))
-                    )
+                    projectClosed model
 
                 IndexCreated index ->
-                    ( { model
-                        | project =
-                            model.project
-                                |> Maybe.map
-                                    (\project -> { project | index = Just index })
-                      }
-                    , Cmd.none
-                    )
+                    indexCreated index model
 
                 EditorValue sourceCode ->
-                    let
-                        _ =
-                            Debug.log "TODO Do something about the changed source code!" sourceCode
-                    in
-                        ( model
-                        , Cmd.none
-                        )
+                    editorValue sourceCode model
 
         LogError err ->
-            ( model
-            , Ports.sendMsgForElectron (ErrorLogRequested err)
-            )
+            logError err model
 
         SelectOne id ->
-            let
-                newProject =
-                    model.project
-                        |> Maybe.map
-                            (\project ->
-                                case id of
-                                    PackageId packageId ->
-                                        { project
-                                            | selection =
-                                                Selection
-                                                    (ESet.singleton packageId)
-                                                    project.selection.module_
-                                                    project.selection.definition
-                                        }
-
-                                    ModuleId moduleId ->
-                                        { project
-                                            | selection =
-                                                Selection
-                                                    project.selection.packages
-                                                    (Just moduleId)
-                                                    project.selection.definition
-                                        }
-
-                                    DefinitionId definitionId ->
-                                        { project
-                                            | selection =
-                                                Selection
-                                                    project.selection.packages
-                                                    project.selection.module_
-                                                    (Just definitionId)
-                                        }
-                            )
-            in
-                ( { model | project = newProject }
-                , Cmd.none
-                )
+            selectOne id model
 
         SelectAnother id ->
-            let
-                newProject =
-                    model.project
-                        |> Maybe.map
-                            (\project ->
-                                case id of
-                                    PackageId packageId ->
-                                        { project
-                                            | selection =
-                                                Selection
-                                                    (ESet.insert packageId project.selection.packages)
-                                                    project.selection.module_
-                                                    project.selection.definition
-                                        }
-
-                                    ModuleId moduleId ->
-                                        { project
-                                            | selection =
-                                                Selection
-                                                    project.selection.packages
-                                                    (Just moduleId)
-                                                    project.selection.definition
-                                        }
-
-                                    DefinitionId definitionId ->
-                                        { project
-                                            | selection =
-                                                Selection
-                                                    project.selection.packages
-                                                    project.selection.module_
-                                                    (Just definitionId)
-                                        }
-                            )
-            in
-                ( { model | project = newProject }
-                , Cmd.none
-                )
+            selectAnother id model
 
         Deselect id ->
-            let
-                newProject =
-                    model.project
-                        |> Maybe.map
-                            (\project ->
-                                case id of
-                                    -- TODO maybe filter all descendants also?
-                                    PackageId packageId ->
-                                        { project
-                                            | selection =
-                                                Selection
-                                                    (ESet.remove packageId project.selection.packages)
-                                                    project.selection.module_
-                                                    project.selection.definition
-                                        }
-
-                                    ModuleId moduleId ->
-                                        { project
-                                            | selection =
-                                                Selection
-                                                    project.selection.packages
-                                                    Nothing
-                                                    project.selection.definition
-                                        }
-
-                                    DefinitionId _ ->
-                                        { project
-                                            | selection =
-                                                Selection
-                                                    project.selection.packages
-                                                    project.selection.module_
-                                                    Nothing
-                                        }
-                            )
-            in
-                ( { model | project = newProject }
-                , Cmd.none
-                )
+            deselect id model
 
         SetFilter filterType isActive ->
-            let
-                newProject =
-                    model.project
-                        |> Maybe.map
-                            (\project ->
-                                let
-                                    { packages, modules, definitions } =
-                                        project.filterConfig
-                                in
-                                    case filterType of
-                                        UserPackages ->
-                                            { packages | user = isActive }
-                                                |> asPackagesFilterConfigIn project.filterConfig
-                                                |> asFilterConfigIn project
+            setFilter filterType isActive model
 
-                                        DirectDeps ->
-                                            { packages | directDeps = isActive }
-                                                |> asPackagesFilterConfigIn project.filterConfig
-                                                |> asFilterConfigIn project
 
-                                        DepsOfDeps ->
-                                            { packages | depsOfDeps = isActive }
-                                                |> asPackagesFilterConfigIn project.filterConfig
-                                                |> asFilterConfigIn project
+askForProject : Model -> ( Model, Cmd Msg )
+askForProject model =
+    model
+        |> withCmd (Ports.sendMsgForElectron ChooseProjectPath)
 
-                                        ExposedModules ->
-                                            { modules | exposed = isActive }
-                                                |> asModulesFilterConfigIn project.filterConfig
-                                                |> asFilterConfigIn project
 
-                                        EffectModules ->
-                                            { modules | effect = isActive }
-                                                |> asModulesFilterConfigIn project.filterConfig
-                                                |> asFilterConfigIn project
+closeProject : Model -> ( Model, Cmd Msg )
+closeProject model =
+    { model | project = Nothing }
+        |> withNoCmd
 
-                                        NativeModules ->
-                                            { modules | native = isActive }
-                                                |> asModulesFilterConfigIn project.filterConfig
-                                                |> asFilterConfigIn project
 
-                                        PortModules ->
-                                            { modules | port_ = isActive }
-                                                |> asModulesFilterConfigIn project.filterConfig
-                                                |> asFilterConfigIn project
+editorChanged : Model -> ( Model, Cmd Msg )
+editorChanged model =
+    model
+        |> withCmd (Ports.sendMsgForElectron FetchEditorValue)
 
-                                        ExposedDefinitions ->
-                                            { definitions | exposed = isActive }
-                                                |> asDefinitionsFilterConfigIn project.filterConfig
-                                                |> asFilterConfigIn project
-                            )
-            in
-                ( { model | project = newProject }
-                , Cmd.none
-                )
+
+showFooterMsg : ( Html Msg, String ) -> Model -> ( Model, Cmd Msg )
+showFooterMsg footerMsg model =
+    { model | footerMsg = Just footerMsg }
+        |> withNoCmd
+
+
+hideFooterMsg : Model -> ( Model, Cmd Msg )
+hideFooterMsg model =
+    { model | footerMsg = Nothing }
+        |> withNoCmd
+
+
+logError : String -> Model -> ( Model, Cmd Msg )
+logError err model =
+    model
+        |> withCmd (Ports.sendMsgForElectron (ErrorLogRequested err))
+
+
+selectOne : Id -> Model -> ( Model, Cmd Msg )
+selectOne id model =
+    let
+        newProject =
+            model.project
+                |> Maybe.map
+                    (\project ->
+                        case id of
+                            PackageId packageId ->
+                                { project
+                                    | selection =
+                                        Selection
+                                            (ESet.singleton packageId)
+                                            project.selection.module_
+                                            project.selection.definition
+                                }
+
+                            ModuleId moduleId ->
+                                { project
+                                    | selection =
+                                        Selection
+                                            project.selection.packages
+                                            (Just moduleId)
+                                            project.selection.definition
+                                }
+
+                            DefinitionId definitionId ->
+                                { project
+                                    | selection =
+                                        Selection
+                                            project.selection.packages
+                                            project.selection.module_
+                                            (Just definitionId)
+                                }
+                    )
+    in
+        { model | project = newProject }
+            |> withNoCmd
+
+
+selectAnother : Id -> Model -> ( Model, Cmd Msg )
+selectAnother id model =
+    let
+        newProject =
+            model.project
+                |> Maybe.map
+                    (\project ->
+                        case id of
+                            PackageId packageId ->
+                                { project
+                                    | selection =
+                                        Selection
+                                            (ESet.insert packageId project.selection.packages)
+                                            project.selection.module_
+                                            project.selection.definition
+                                }
+
+                            ModuleId moduleId ->
+                                { project
+                                    | selection =
+                                        Selection
+                                            project.selection.packages
+                                            (Just moduleId)
+                                            project.selection.definition
+                                }
+
+                            DefinitionId definitionId ->
+                                { project
+                                    | selection =
+                                        Selection
+                                            project.selection.packages
+                                            project.selection.module_
+                                            (Just definitionId)
+                                }
+                    )
+    in
+        { model | project = newProject }
+            |> withNoCmd
+
+
+deselect : Id -> Model -> ( Model, Cmd Msg )
+deselect id model =
+    let
+        newProject =
+            model.project
+                |> Maybe.map
+                    (\project ->
+                        case id of
+                            PackageId packageId ->
+                                { project
+                                    | selection =
+                                        Selection
+                                            (ESet.remove packageId project.selection.packages)
+                                            project.selection.module_
+                                            project.selection.definition
+                                }
+
+                            ModuleId moduleId ->
+                                { project
+                                    | selection =
+                                        Selection
+                                            project.selection.packages
+                                            Nothing
+                                            project.selection.definition
+                                }
+
+                            DefinitionId _ ->
+                                { project
+                                    | selection =
+                                        Selection
+                                            project.selection.packages
+                                            project.selection.module_
+                                            Nothing
+                                }
+                    )
+    in
+        { model | project = newProject }
+            |> withNoCmd
+
+
+setFilter : FilterType -> Bool -> Model -> ( Model, Cmd Msg )
+setFilter filterType isActive model =
+    let
+        newProject =
+            model.project
+                |> Maybe.map
+                    (\project ->
+                        let
+                            { packages, modules, definitions } =
+                                project.filterConfig
+                        in
+                            case filterType of
+                                UserPackages ->
+                                    { packages | user = isActive }
+                                        |> asPackagesFilterConfigIn project.filterConfig
+                                        |> asFilterConfigIn project
+
+                                DirectDeps ->
+                                    { packages | directDeps = isActive }
+                                        |> asPackagesFilterConfigIn project.filterConfig
+                                        |> asFilterConfigIn project
+
+                                DepsOfDeps ->
+                                    { packages | depsOfDeps = isActive }
+                                        |> asPackagesFilterConfigIn project.filterConfig
+                                        |> asFilterConfigIn project
+
+                                ExposedModules ->
+                                    { modules | exposed = isActive }
+                                        |> asModulesFilterConfigIn project.filterConfig
+                                        |> asFilterConfigIn project
+
+                                EffectModules ->
+                                    { modules | effect = isActive }
+                                        |> asModulesFilterConfigIn project.filterConfig
+                                        |> asFilterConfigIn project
+
+                                NativeModules ->
+                                    { modules | native = isActive }
+                                        |> asModulesFilterConfigIn project.filterConfig
+                                        |> asFilterConfigIn project
+
+                                PortModules ->
+                                    { modules | port_ = isActive }
+                                        |> asModulesFilterConfigIn project.filterConfig
+                                        |> asFilterConfigIn project
+
+                                ExposedDefinitions ->
+                                    { definitions | exposed = isActive }
+                                        |> asDefinitionsFilterConfigIn project.filterConfig
+                                        |> asFilterConfigIn project
+                    )
+    in
+        { model | project = newProject }
+            |> withNoCmd
+
+
+projectPathChosen : String -> Model -> ( Model, Cmd Msg )
+projectPathChosen path model =
+    { model
+        | project =
+            Just
+                { rootPath = path
+                , index = Nothing
+                , selection = Selection.empty
+                , filterConfig = FilterConfig.empty
+                }
+    }
+        |> withCmds
+            [ Ports.sendMsgForElectron CreateIndex
+            , Ports.sendMsgForElectron (ChangeTitle (windowTitle (Just path)))
+            ]
+
+
+noProjectPathChosen : Model -> ( Model, Cmd Msg )
+noProjectPathChosen model =
+    model
+        |> withNoCmd
+
+
+projectClosed : Model -> ( Model, Cmd Msg )
+projectClosed model =
+    { model | project = Nothing }
+        |> withCmd (Ports.sendMsgForElectron (ChangeTitle (windowTitle Nothing)))
+
+
+indexCreated : Index -> Model -> ( Model, Cmd Msg )
+indexCreated index model =
+    { model
+        | project =
+            model.project
+                |> Maybe.map
+                    (\project -> { project | index = Just index })
+    }
+        |> withNoCmd
+
+
+editorValue : String -> Model -> ( Model, Cmd Msg )
+editorValue sourceCode model =
+    -- TODO do something about the changed source code
+    model
+        |> withNoCmd
 
 
 asPackagesFilterConfigIn : FilterConfig -> PackagesFilterConfig -> FilterConfig
