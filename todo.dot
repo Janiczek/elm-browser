@@ -44,10 +44,9 @@ subgraph cluster_code_editor {
   fillcolor="#ffcc44";
   node [style=filled,color="#ddaa11", fillcolor=white];
 
-  {rank=same "saving changes" "height bug" "vim mode"}
+  {rank=same "saving changes" "vim mode"}
 
   "saving changes";
-  "height bug";
   "vim mode";
   
   "definition range metadata" -> "saving changes";
@@ -56,7 +55,6 @@ subgraph cluster_code_editor {
 }
 
 "saving changes" -> "code editor";
-"height bug" -> "code editor";
 "vim mode" -> "code editor";
 
 subgraph cluster_indexing {
