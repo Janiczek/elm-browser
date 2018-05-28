@@ -5,57 +5,120 @@ import EverySet as ESet exposing (EverySet)
 import Types exposing (..)
 
 
-packageId : Named (Authored a) -> PackageOnlyId
-packageId { author, name } =
-    PackageOnlyId (author ++ "/" ++ name)
+selectedPackageId : Selection -> Maybe PackageId
+selectedPackageId selection =
+    case selection of
+        NothingSelected ->
+            Nothing
+
+        PackageSelected id ->
+            Just id
+
+        ModuleSelected _ ->
+            Nothing
+
+        PackageAndModuleSelected id _ ->
+            Just id
+
+        ModuleAndDefinitionSelected _ _ ->
+            Nothing
+
+        AllSelected id _ _ ->
+            Just id
 
 
-moduleId : Named a -> ModuleOnlyId
-moduleId { name } =
-    ModuleOnlyId name
+selectedModuleId : Selection -> Maybe ModuleId
+selectedModuleId selection =
+    case selection of
+        NothingSelected ->
+            Nothing
+
+        PackageSelected _ ->
+            Nothing
+
+        ModuleSelected id ->
+            Just id
+
+        PackageAndModuleSelected _ id ->
+            Just id
+
+        ModuleAndDefinitionSelected id _ ->
+            Just id
+
+        AllSelected _ id _ ->
+            Just id
 
 
-definitionId : String -> CommonDefinition a -> DefinitionOnlyId
-definitionId moduleName { name } =
-    DefinitionOnlyId (moduleName ++ "." ++ name)
+selectedDefinitionId : Selection -> Maybe DefinitionId
+selectedDefinitionId selection =
+    case selection of
+        NothingSelected ->
+            Nothing
+
+        PackageSelected _ ->
+            Nothing
+
+        ModuleSelected _ ->
+            Nothing
+
+        PackageAndModuleSelected _ _ ->
+            Nothing
+
+        ModuleAndDefinitionSelected _ id ->
+            Just id
+
+        AllSelected _ _ id ->
+            Just id
 
 
-isPackageSelected : Selection -> Package -> Bool
-isPackageSelected selection package =
-    selection.packages
-        |> ESet.member (packageId package)
-
-
-isModuleIdSelected : Selection -> ModuleOnlyId -> Bool
-isModuleIdSelected selection moduleId =
-    selection.module_ == Just moduleId
-
-
-isModuleSelected : Selection -> Module -> Bool
-isModuleSelected selection module_ =
-    isModuleIdSelected selection (ModuleOnlyId module_.name)
-
-
-isDefinitionSelected : DefinitionOnlyId -> CommonDefinition a -> Selection -> Bool
-isDefinitionSelected definitionId definitionOrConstructor selection =
-    selection.definition
-        |> Maybe.map (\selectedDefinition -> selectedDefinition == definitionId)
+isPackageSelected : PackageId -> Selection -> Bool
+isPackageSelected packageId selection =
+    selection
+        |> selectedPackageId
+        |> Maybe.map ((==) packageId)
         |> Maybe.withDefault False
 
 
-modulesForPackages : EverySet PackageOnlyId -> Index -> EverySet ModuleOnlyId
+isModuleSelected : ModuleId -> Selection -> Bool
+isModuleSelected moduleId selection =
+    selection
+        |> selectedModuleId
+        |> Maybe.map ((==) moduleId)
+        |> Maybe.withDefault False
+
+
+isDefinitionSelected : DefinitionId -> Selection -> Bool
+isDefinitionSelected definitionId selection =
+    selection
+        |> selectedDefinitionId
+        |> Maybe.map ((==) definitionId)
+        |> Maybe.withDefault False
+
+
+
+-- TODO move somewhere else
+
+
+modulesForPackages : EverySet PackageId -> Index -> EverySet ModuleId
 modulesForPackages packages index =
     index.packages
         |> EDict.filter (\packageId _ -> ESet.member packageId packages)
         |> EDict.values
         |> List.map .modules
-        |> List.concatMap (ESet.toList)
+        |> List.concatMap ESet.toList
         |> ESet.fromList
 
 
-empty : Selection
-empty =
-    { packages = ESet.empty
-    , module_ = Nothing
-    , definition = Nothing
-    }
+packageId : Named a -> PackageId
+packageId { name } =
+    PackageId name
+
+
+moduleId : Named a -> ModuleId
+moduleId { name } =
+    ModuleId name
+
+
+definitionId : String -> CommonDefinition a -> DefinitionId
+definitionId moduleName { name } =
+    DefinitionId (moduleName ++ "." ++ name)

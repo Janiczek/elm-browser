@@ -1,4 +1,4 @@
-module View.Row exposing (package, module_, definition)
+module View.Row exposing (definition, module_, package)
 
 import Html as H exposing (Html)
 import Html.Attributes as HA
@@ -8,32 +8,38 @@ import Types exposing (..)
 import View.Icon exposing (..)
 
 
-package : Selection -> PackageOnlyId -> Package -> Html Msg
+package : Selection -> PackageId -> Package -> Html Msg
 package selection packageId package =
     row
-        (PackageId packageId)
-        (Selection.isPackageSelected selection package)
+        packageId
+        SelectPackage
+        DeselectPackage
+        (Selection.isPackageSelected packageId selection)
         (packageRow package)
 
 
-module_ : Selection -> ModuleOnlyId -> Module -> Html Msg
+module_ : Selection -> ModuleId -> Module -> Html Msg
 module_ selection moduleId module_ =
     row
-        (ModuleId moduleId)
-        (Selection.isModuleSelected selection module_)
+        moduleId
+        SelectModule
+        DeselectModule
+        (Selection.isModuleSelected moduleId selection)
         (moduleRow module_)
 
 
-definition : Selection -> DefinitionOnlyId -> Definition -> Html Msg
+definition : Selection -> DefinitionId -> Definition -> Html Msg
 definition selection definitionId definition =
     row
-        (DefinitionId definitionId)
-        (Selection.isDefinitionSelected definitionId definition selection)
+        definitionId
+        SelectDefinition
+        DeselectDefinition
+        (Selection.isDefinitionSelected definitionId selection)
         (definitionRow definition)
 
 
 packageRow : Package -> Html Msg
-packageRow { author, name, version, dependencyType, containsNativeModules, containsEffectModules } =
+packageRow { name, version, dependencyType, containsNativeModules, containsEffectModules } =
     H.div
         [ HA.class "identifier" ]
         [ H.span
@@ -43,17 +49,22 @@ packageRow { author, name, version, dependencyType, containsNativeModules, conta
                 , ( "identifier__content--dep-of-dep", dependencyType == DependencyOfDependency )
                 ]
             ]
-            [ H.text author
-            , divider "/"
-            , H.text name
-            ]
+            [ H.text name ]
         , H.span
             [ HA.class "identifier__metadata" ]
-            [ nativeIcon containsNativeModules
-            , effectIcon containsEffectModules
-            , divider "@"
-            , H.text version
-            ]
+            ([ nativeIcon containsNativeModules
+             , effectIcon containsEffectModules
+             ]
+                ++ (version
+                        |> Maybe.map
+                            (\v ->
+                                [ divider "@"
+                                , H.text v
+                                ]
+                            )
+                        |> Maybe.withDefault []
+                   )
+            )
         ]
 
 
@@ -94,16 +105,14 @@ definitionRow { name, isExposed } =
         ]
 
 
-row : Id -> Bool -> Html Msg -> Html Msg
-row identifier isSelected content =
-    -- TODO Ctrl+click for multiple select (and deselect) ... SelectAnother
-    -- TODO Shift+click for range select
+row : id -> (id -> Msg) -> Msg -> Bool -> Html Msg -> Html Msg
+row id selectMsg deselectMsg isSelected content =
     H.tr
         [ HE.onClick
             (if isSelected then
-                Deselect identifier
+                deselectMsg
              else
-                SelectOne identifier
+                selectMsg id
             )
         ]
         [ H.td

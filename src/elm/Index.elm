@@ -3,42 +3,10 @@ module Index exposing (..)
 import EveryDict as EDict exposing (EveryDict)
 import EverySet as ESet exposing (EverySet)
 import Json.Decode as JD exposing (Decoder)
-import Json.Decode.Pipeline as JDP
 import Maybe.Extra as Maybe
 import Selection
 import Types exposing (..)
-import Types.Json exposing (..)
 import Utils
-
-
-decoder : Decoder JsonIndex
-decoder =
-    JD.list package
-
-
-package : Decoder JsonPackage
-package =
-    JDP.decode JsonPackage
-        |> JDP.required "author" JD.string
-        |> JDP.required "name" JD.string
-        |> JDP.required "version" JD.string
-        |> JDP.required "isUserPackage" JD.bool
-        |> JDP.required "isDirectDependency" JD.bool
-        |> JDP.required "containsEffectModules" JD.bool
-        |> JDP.required "containsNativeModules" JD.bool
-        |> JDP.required "modules" (JD.list module_)
-
-
-module_ : Decoder JsonModule
-module_ =
-    JD.map7 JsonModule
-        (JD.field "name" JD.string)
-        (JD.field "isExposed" JD.bool)
-        (JD.field "isEffect" JD.bool)
-        (JD.field "isNative" JD.bool)
-        (JD.field "isPort" JD.bool)
-        (JD.field "definitions" (JD.list definition))
-        (JD.field "language" language)
 
 
 definition : Decoder Definition
@@ -47,7 +15,7 @@ definition =
         (JD.field "name" JD.string)
         definitionKind
         (JD.field "isExposed" JD.bool)
-        (JD.field "sourceCode" JD.string)
+        (JD.field "sourceCode" (JD.string |> JD.map SourceCode))
 
 
 language : Decoder Language
@@ -121,7 +89,7 @@ typeAlias =
     JD.succeed TypeAlias
 
 
-sourceCode : Selection -> Index -> FilterConfig -> Maybe String
+sourceCode : Selection -> Index -> FilterConfig -> Maybe SourceCode
 sourceCode selection index filterConfig =
     selectedModuleIdAndDefinition selection index
         |> ifDefinitionCanBeShown selection index filterConfig
@@ -136,7 +104,8 @@ selectedLanguage selection index =
 
 moduleForSelectedDefinition : Selection -> Index -> Maybe Module
 moduleForSelectedDefinition selection index =
-    selection.definition
+    selection
+        |> Selection.selectedDefinitionId
         |> Maybe.andThen
             (\definitionId ->
                 index.modules
@@ -146,9 +115,10 @@ moduleForSelectedDefinition selection index =
             )
 
 
-moduleIdForSelectedDefinition : Selection -> Index -> Maybe ModuleOnlyId
+moduleIdForSelectedDefinition : Selection -> Index -> Maybe ModuleId
 moduleIdForSelectedDefinition selection index =
-    selection.definition
+    selection
+        |> Selection.selectedDefinitionId
         |> Maybe.andThen
             (\definitionId ->
                 index.modules
@@ -158,14 +128,14 @@ moduleIdForSelectedDefinition selection index =
             )
 
 
-selectedModuleIdAndDefinition : Selection -> Index -> Maybe ( ModuleOnlyId, Definition )
+selectedModuleIdAndDefinition : Selection -> Index -> Maybe ( ModuleId, Definition )
 selectedModuleIdAndDefinition selection index =
     Maybe.map2 (,)
         (moduleIdForSelectedDefinition selection index)
         (selectedDefinition selection index)
         |> Maybe.andThen
             (\( moduleId, definition ) ->
-                if selection.module_ == (Just moduleId) then
+                if Selection.selectedModuleId selection == Just moduleId then
                     Just ( moduleId, definition )
                 else
                     Nothing
@@ -174,14 +144,15 @@ selectedModuleIdAndDefinition selection index =
 
 selectedDefinition : Selection -> Index -> Maybe Definition
 selectedDefinition selection index =
-    selection.definition
-        |> Maybe.andThen (\selectedDefinitionId -> EDict.get selectedDefinitionId index.definitions)
+    selection
+        |> Selection.selectedDefinitionId
+        |> Maybe.andThen (\definitionId -> EDict.get definitionId index.definitions)
 
 
-selectedDefinitionAndId : Selection -> Index -> Maybe ( DefinitionOnlyId, Definition )
+selectedDefinitionAndId : Selection -> Index -> Maybe ( DefinitionId, Definition )
 selectedDefinitionAndId selection index =
     Maybe.map2 (,)
-        selection.definition
+        (Selection.selectedDefinitionId selection)
         (selectedDefinition selection index)
 
 
@@ -189,23 +160,22 @@ ifDefinitionCanBeShown :
     Selection
     -> Index
     -> FilterConfig
-    -> Maybe ( ModuleOnlyId, Definition )
-    -> Maybe ( ModuleOnlyId, Definition )
+    -> Maybe ( ModuleId, Definition )
+    -> Maybe ( ModuleId, Definition )
 ifDefinitionCanBeShown selection index filterConfig maybeModuleIdAndDefinition =
     let
         shownDefs =
             shownDefinitions index selection filterConfig.definitions
                 |> List.map Tuple.second
     in
-        maybeModuleIdAndDefinition
-            |> Maybe.filter (\( _, def ) -> List.member def shownDefs)
+    maybeModuleIdAndDefinition
+        |> Maybe.filter (\( _, def ) -> List.member def shownDefs)
 
 
-selectedPackages : Selection -> Index -> EverySet Package
-selectedPackages selection index =
-    index.packages
-        |> EDict.filter (\packageId _ -> ESet.member packageId selection.packages)
-        |> Utils.dictValuesToSet
+selectedPackage : Selection -> Index -> Maybe Package
+selectedPackage selection index =
+    Selection.selectedPackageId selection
+        |> Maybe.andThen (\packageId -> EDict.get packageId index.packages)
 
 
 empty : Index
@@ -216,114 +186,54 @@ empty =
     }
 
 
-normalize : JsonIndex -> Index
-normalize index =
-    let
-        modulesToIds : List JsonModule -> ModuleIds
-        modulesToIds modules =
-            modules
-                |> List.map Selection.moduleId
-                |> ESet.fromList
-
-        packages =
-            index
-                |> List.map
-                    (\jsonPackage ->
-                        { author = jsonPackage.author
-                        , name = jsonPackage.name
-                        , version = jsonPackage.version
-                        , dependencyType =
-                            if jsonPackage.isUserPackage then
-                                UserPackage
-                            else if jsonPackage.isDirectDependency then
-                                DirectDependency
-                            else
-                                DependencyOfDependency
-                        , containsEffectModules = jsonPackage.containsEffectModules
-                        , containsNativeModules = jsonPackage.containsNativeModules
-                        , modules = modulesToIds jsonPackage.modules
-                        }
-                    )
-                |> List.map (\package -> ( Selection.packageId package, package ))
-                |> EDict.fromList
-
-        definitionsToIds : String -> List Definition -> DefinitionIds
-        definitionsToIds moduleName definitions =
-            definitions
-                |> List.map (Selection.definitionId moduleName)
-                |> ESet.fromList
-
-        modules =
-            index
-                |> List.concatMap .modules
-                |> List.map
-                    (\module_ ->
-                        { module_
-                            | definitions =
-                                definitionsToIds
-                                    module_.name
-                                    module_.definitions
-                        }
-                    )
-                |> List.map
-                    (\module_ ->
-                        ( Selection.moduleId module_
-                        , module_
-                        )
-                    )
-                |> EDict.fromList
-
-        definitions =
-            -- (ModuleName, Definition)
-            -- EDict DefinitionId Definition
-            index
-                |> List.concatMap .modules
-                |> List.map (\module_ -> ( module_.name, module_.definitions ))
-                |> List.concatMap
-                    (\( moduleName, definitions ) ->
-                        definitions
-                            |> List.map (\definition -> ( moduleName, definition ))
-                    )
-                |> List.map
-                    (\( moduleName, definition ) ->
-                        ( Selection.definitionId moduleName definition
-                        , definition
-                        )
-                    )
-                |> EDict.fromList
-    in
-        { packages = packages
-        , modules = modules
-        , definitions = definitions
-        }
-
-
-shownDefinitions : Index -> Selection -> DefinitionsFilterConfig -> List ( DefinitionOnlyId, Definition )
+shownDefinitions : Index -> Selection -> DefinitionsFilterConfig -> List ( DefinitionId, Definition )
 shownDefinitions index selection { exposed } =
     let
         showAll =
             not exposed
     in
-        if canShowDefinitionsFromSelectedModule index selection then
-            selection.module_
-                |> Maybe.andThen ((flip EDict.get) index.modules)
-                |> Maybe.map .definitions
-                |> Maybe.withDefault ESet.empty
-                |> Utils.dictGetKv index.definitions
-                |> List.filter
-                    (\( _, { isExposed } ) ->
-                        showAll
-                            || if exposed then
+    if canShowDefinitionsFromSelectedModule index selection then
+        selection
+            |> Selection.selectedModuleId
+            |> Maybe.andThen (flip EDict.get index.modules)
+            |> Maybe.map .definitions
+            |> Maybe.withDefault ESet.empty
+            |> Utils.dictGetKv index.definitions
+            |> List.filter
+                (\( _, { isExposed } ) ->
+                    showAll
+                        || (if exposed then
                                 isExposed
-                               else
+                            else
                                 True
-                    )
-        else
-            []
+                           )
+                )
+    else
+        []
 
 
 canShowDefinitionsFromSelectedModule : Index -> Selection -> Bool
 canShowDefinitionsFromSelectedModule index selection =
-    selection.module_
-        |> Maybe.map (\module_ -> ESet.isEmpty selection.packages || ESet.member module_ (Selection.modulesForPackages selection.packages index))
-        |> Maybe.withDefault True
+    let
+        noPackageSelected : Bool
+        noPackageSelected =
+            Selection.selectedPackageId selection == Nothing
+
+        selectedModuleIsInSelectedPackage : Bool
+        selectedModuleIsInSelectedPackage =
+            Maybe.map2 (moduleIsInPackage index)
+                (Selection.selectedModuleId selection)
+                (Selection.selectedPackageId selection)
+                |> Maybe.withDefault True
+    in
+    noPackageSelected
+        || selectedModuleIsInSelectedPackage
+
+
+moduleIsInPackage : Index -> ModuleId -> PackageId -> Bool
+moduleIsInPackage index moduleId packageId =
+    index.packages
+        |> EDict.get packageId
+        |> Maybe.map .modules
+        |> Maybe.map (ESet.member moduleId)
+        |> Maybe.withDefault False

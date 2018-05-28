@@ -1,7 +1,7 @@
 module View.Column exposing (..)
 
 import EveryDict as EDict
-import EverySet as ESet exposing (EverySet)
+import EverySet as ESet
 import Html as H exposing (Html)
 import Html.Attributes as HA
 import Html.Events as HE
@@ -38,38 +38,38 @@ filterButton filterType isActive =
         filterIcon =
             Icon.filterIcon filterType
     in
-        H.button
-            [ HA.classList
-                [ ( "filter__button", True )
-                , ( "btn", True )
-                , ( "btn-mini", True )
-                , ( "btn-default", True )
-                , ( "active", isActive )
-                ]
-            , HE.onMouseEnter
-                (ShowFooterMsg
-                    ( H.span [ HA.class <| "footer__icon icon " ++ filterIcon ] []
-                    , Footer.filterTooltip filterType
-                    )
-                )
-            , HE.onMouseLeave HideFooterMsg
-            , HE.onClick (SetFilter filterType (not isActive))
+    H.button
+        [ HA.classList
+            [ ( "filter__button", True )
+            , ( "btn", True )
+            , ( "btn-mini", True )
+            , ( "btn-default", True )
+            , ( "active", isActive )
             ]
-            [ H.span [ HA.class <| "icon " ++ filterIcon ] [] ]
+        , HE.onMouseEnter
+            (ShowFooterMsg
+                ( H.span [ HA.class <| "footer__icon icon " ++ filterIcon ] []
+                , Footer.filterTooltip filterType
+                )
+            )
+        , HE.onMouseLeave HideFooterMsg
+        , HE.onClick (SetFilter filterType (not isActive))
+        ]
+        [ H.span [ HA.class <| "icon " ++ filterIcon ] [] ]
 
 
-packages : Index -> PackagesFilterConfig -> List ( PackageOnlyId, Package )
+packages : Index -> PackagesFilterConfig -> List ( PackageId, Package )
 packages index { user, directDeps, depsOfDeps } =
     let
         showAll =
             not (user || directDeps || depsOfDeps)
     in
-        index.packages
-            |> EDict.toList
-            |> List.filter
-                (\( _, { dependencyType } ) ->
-                    showAll
-                        || case dependencyType of
+    index.packages
+        |> EDict.toList
+        |> List.filter
+            (\( _, { dependencyType } ) ->
+                showAll
+                    || (case dependencyType of
                             UserPackage ->
                                 user
 
@@ -78,21 +78,22 @@ packages index { user, directDeps, depsOfDeps } =
 
                             DependencyOfDependency ->
                                 depsOfDeps
-                )
-            |> List.sortBy
-                (\( PackageOnlyId id, { dependencyType } ) ->
-                    ( case dependencyType of
-                        UserPackage ->
-                            1
+                       )
+            )
+        |> List.sortBy
+            (\( PackageId id, { dependencyType } ) ->
+                ( case dependencyType of
+                    UserPackage ->
+                        1
 
-                        DirectDependency ->
-                            2
+                    DirectDependency ->
+                        2
 
-                        DependencyOfDependency ->
-                            3
-                    , id
-                    )
+                    DependencyOfDependency ->
+                        3
+                , id
                 )
+            )
 
 
 packagesHeader : PackagesFilterConfig -> Html Msg
@@ -151,48 +152,51 @@ packagesColumn index selection packagesFilterConfig =
         |> innerTable
 
 
-modules : Index -> Selection -> ModulesFilterConfig -> List ( ModuleOnlyId, Module )
+modules : Index -> Selection -> ModulesFilterConfig -> List ( ModuleId, Module )
 modules index selection { exposed, effect, native, port_ } =
     let
         showAll =
             not (exposed || effect || native || port_)
     in
-        (case packagesForModulesColumn index selection of
-            AllPackages ->
-                index.packages |> Utils.dictKeysToSet
+    (case packagesForModulesColumn index selection of
+        AllPackages ->
+            index.packages |> Utils.dictKeysToSet
 
-            SelectedPackages ->
-                selection.packages
-        )
-            |> (flip Selection.modulesForPackages) index
-            |> Utils.dictGetKv index.modules
-            |> List.filter
-                (\( _, module_ ) ->
-                    showAll
-                        || List.all (\f -> f module_)
-                            [ \{ isExposed } ->
-                                if exposed then
-                                    isExposed
-                                else
-                                    True
-                            , \{ isEffect } ->
-                                if effect then
-                                    isEffect
-                                else
-                                    True
-                            , \{ isNative } ->
-                                if native then
-                                    isNative
-                                else
-                                    True
-                            , \{ isPort } ->
-                                if port_ then
-                                    isPort
-                                else
-                                    True
-                            ]
-                )
-            |> List.sortBy (\( ModuleOnlyId id, _ ) -> id)
+        SelectedPackages ->
+            selection
+                |> Selection.selectedPackageId
+                |> Maybe.map ESet.singleton
+                |> Maybe.withDefault ESet.empty
+    )
+        |> flip Selection.modulesForPackages index
+        |> Utils.dictGetKv index.modules
+        |> List.filter
+            (\( _, module_ ) ->
+                showAll
+                    || List.all (\f -> f module_)
+                        [ \{ isExposed } ->
+                            if exposed then
+                                isExposed
+                            else
+                                True
+                        , \{ isEffect } ->
+                            if effect then
+                                isEffect
+                            else
+                                True
+                        , \{ isNative } ->
+                            if native then
+                                isNative
+                            else
+                                True
+                        , \{ isPort } ->
+                            if port_ then
+                                isPort
+                            else
+                                True
+                        ]
+            )
+        |> List.sortBy (\( ModuleId id, _ ) -> id)
 
 
 modulesColumn : Index -> Selection -> ModulesFilterConfig -> Html Msg
@@ -216,7 +220,7 @@ type PackagesToShowModulesFrom
 
 packagesForModulesColumn : Index -> Selection -> PackagesToShowModulesFrom
 packagesForModulesColumn index selection =
-    if ESet.isEmpty selection.packages then
+    if Selection.selectedPackageId selection == Nothing then
         AllPackages
     else
         SelectedPackages

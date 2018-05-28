@@ -1,10 +1,11 @@
-module App exposing (init, update, subscriptions)
+module App exposing (init, subscriptions, update)
 
-import EverySet as ESet
-import Ports
-import Html exposing (Html)
-import FilterConfig
 import Cmd.Extra exposing (..)
+import EveryDict as EDict
+import EverySet as ESet
+import Html exposing (Html)
+import Index
+import Ports
 import Selection
 import Types exposing (..)
 
@@ -17,14 +18,16 @@ init =
         |> withNoCmd
 
 
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Ports.getMsgForElm MsgForElm LogError
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        AskForProject ->
-            askForProject model
-
-        CloseProject ->
-            closeProject model
+        CreateNewProject ->
+            createNewProject model
 
         EditorChanged ->
             editorChanged model
@@ -37,46 +40,177 @@ update msg model =
 
         MsgForElm msgForElm ->
             case msgForElm of
-                ProjectPathChosen path ->
-                    projectPathChosen path model
-
-                NoProjectPathChosen ->
-                    noProjectPathChosen model
+                EditorValue sourceCode ->
+                    editorValue sourceCode model
 
                 ProjectClosed ->
                     projectClosed model
 
-                IndexCreated index ->
-                    indexCreated index model
-
-                EditorValue sourceCode ->
-                    editorValue sourceCode model
-
         LogError err ->
             logError err model
-
-        SelectOne id ->
-            selectOne id model
-
-        SelectAnother id ->
-            selectAnother id model
-
-        Deselect id ->
-            deselect id model
 
         SetFilter filterType isActive ->
             setFilter filterType isActive model
 
+        SelectPackage packageId ->
+            selectPackage packageId model
 
-askForProject : Model -> ( Model, Cmd Msg )
-askForProject model =
-    model
-        |> withCmd (Ports.sendMsgForElectron ChooseProjectPath)
+        SelectModule moduleId ->
+            selectModule moduleId model
+
+        SelectDefinition definitionId ->
+            selectDefinition definitionId model
+
+        DeselectPackage ->
+            deselectPackage model
+
+        DeselectModule ->
+            deselectModule model
+
+        DeselectDefinition ->
+            deselectDefinition model
 
 
-closeProject : Model -> ( Model, Cmd Msg )
-closeProject model =
-    { model | project = Nothing }
+createNewProject : Model -> ( Model, Cmd Msg )
+createNewProject model =
+    let
+        userPackageId =
+            PackageId "author/project"
+
+        mainModuleId =
+            ModuleId "Main"
+
+        basicsId =
+            ModuleId "Basics"
+
+        listId =
+            ModuleId "List"
+
+        mainId =
+            DefinitionId "Main.main"
+
+        absId =
+            DefinitionId "Basics.abs"
+
+        singletonId =
+            DefinitionId "List.singleton"
+    in
+    { model
+        | project =
+            Just
+                { rootPath = "/tmp/elm-browser-project/"
+                , index =
+                    Just
+                        { packages =
+                            [ ( userPackageId
+                              , { name = "author/project"
+                                , version = Nothing
+                                , dependencyType = UserPackage
+                                , containsEffectModules = False
+                                , containsNativeModules = False
+                                , modules = ESet.fromList [ mainModuleId ]
+                                }
+                              )
+                            , ( PackageId "elm/core"
+                              , { name = "elm/core"
+                                , version = Just "1.0.0"
+                                , dependencyType = DirectDependency
+                                , containsEffectModules = True
+                                , containsNativeModules = True
+                                , modules = ESet.fromList [ basicsId, listId ]
+                                }
+                              )
+                            ]
+                                |> EDict.fromList
+                        , modules =
+                            [ ( mainModuleId
+                              , { name = "Main"
+                                , isExposed = True
+                                , isEffect = False
+                                , isNative = False
+                                , isPort = False
+                                , definitions = ESet.fromList [ mainId ]
+                                , language = Elm
+                                }
+                              )
+                            , ( basicsId
+                              , { name = "Basics"
+                                , isExposed = True
+                                , isEffect = False
+                                , isNative = False
+                                , isPort = False
+                                , definitions = ESet.fromList [ absId ]
+                                , language = Elm
+                                }
+                              )
+                            , ( listId
+                              , { name = "List"
+                                , isExposed = True
+                                , isEffect = False
+                                , isNative = False
+                                , isPort = False
+                                , definitions = ESet.fromList [ singletonId ]
+                                , language = Elm
+                                }
+                              )
+                            ]
+                                |> EDict.fromList
+                        , definitions =
+                            [ ( mainId
+                              , { name = "main"
+                                , kind = Constant { type_ = "Html msg" }
+                                , isExposed = True
+                                , sourceCode = SourceCode """main : Html msg
+main =
+    Html.text ""
+"""
+                                }
+                              )
+                            , ( absId
+                              , { name = "abs"
+                                , kind = Constant { type_ = "number -> number" }
+                                , isExposed = True
+                                , sourceCode = SourceCode """abs : number -> number
+abs number =
+    if number < 0 then
+        negate number
+    else
+        number
+"""
+                                }
+                              )
+                            , ( singletonId
+                              , { name = "singleton"
+                                , kind = Constant { type_ = "a -> List a" }
+                                , isExposed = True
+                                , sourceCode = SourceCode """singleton : a -> List a
+singleton x =
+    [x]
+"""
+                                }
+                              )
+                            ]
+                                |> EDict.fromList
+                        }
+                , selection = ModuleAndDefinitionSelected mainModuleId mainId
+                , filterConfig =
+                    { packages =
+                        { user = False
+                        , directDeps = False
+                        , depsOfDeps = False
+                        }
+                    , modules =
+                        { exposed = False
+                        , effect = False
+                        , native = False
+                        , port_ = False
+                        }
+                    , definitions =
+                        { exposed = False
+                        }
+                    }
+                }
+    }
         |> withNoCmd
 
 
@@ -104,126 +238,6 @@ logError err model =
         |> withCmd (Ports.sendMsgForElectron (ErrorLogRequested err))
 
 
-selectOne : Id -> Model -> ( Model, Cmd Msg )
-selectOne id model =
-    let
-        newProject =
-            model.project
-                |> Maybe.map
-                    (\project ->
-                        case id of
-                            PackageId packageId ->
-                                { project
-                                    | selection =
-                                        Selection
-                                            (ESet.singleton packageId)
-                                            project.selection.module_
-                                            project.selection.definition
-                                }
-
-                            ModuleId moduleId ->
-                                { project
-                                    | selection =
-                                        Selection
-                                            project.selection.packages
-                                            (Just moduleId)
-                                            project.selection.definition
-                                }
-
-                            DefinitionId definitionId ->
-                                { project
-                                    | selection =
-                                        Selection
-                                            project.selection.packages
-                                            project.selection.module_
-                                            (Just definitionId)
-                                }
-                    )
-    in
-        { model | project = newProject }
-            |> withNoCmd
-
-
-selectAnother : Id -> Model -> ( Model, Cmd Msg )
-selectAnother id model =
-    let
-        newProject =
-            model.project
-                |> Maybe.map
-                    (\project ->
-                        case id of
-                            PackageId packageId ->
-                                { project
-                                    | selection =
-                                        Selection
-                                            (ESet.insert packageId project.selection.packages)
-                                            project.selection.module_
-                                            project.selection.definition
-                                }
-
-                            ModuleId moduleId ->
-                                { project
-                                    | selection =
-                                        Selection
-                                            project.selection.packages
-                                            (Just moduleId)
-                                            project.selection.definition
-                                }
-
-                            DefinitionId definitionId ->
-                                { project
-                                    | selection =
-                                        Selection
-                                            project.selection.packages
-                                            project.selection.module_
-                                            (Just definitionId)
-                                }
-                    )
-    in
-        { model | project = newProject }
-            |> withNoCmd
-
-
-deselect : Id -> Model -> ( Model, Cmd Msg )
-deselect id model =
-    let
-        newProject =
-            model.project
-                |> Maybe.map
-                    (\project ->
-                        case id of
-                            PackageId packageId ->
-                                { project
-                                    | selection =
-                                        Selection
-                                            (ESet.remove packageId project.selection.packages)
-                                            project.selection.module_
-                                            project.selection.definition
-                                }
-
-                            ModuleId moduleId ->
-                                { project
-                                    | selection =
-                                        Selection
-                                            project.selection.packages
-                                            Nothing
-                                            project.selection.definition
-                                }
-
-                            DefinitionId _ ->
-                                { project
-                                    | selection =
-                                        Selection
-                                            project.selection.packages
-                                            project.selection.module_
-                                            Nothing
-                                }
-                    )
-    in
-        { model | project = newProject }
-            |> withNoCmd
-
-
 setFilter : FilterType -> Bool -> Model -> ( Model, Cmd Msg )
 setFilter filterType isActive model =
     let
@@ -235,72 +249,269 @@ setFilter filterType isActive model =
                             { packages, modules, definitions } =
                                 project.filterConfig
                         in
-                            case filterType of
-                                UserPackages ->
-                                    { packages | user = isActive }
-                                        |> asPackagesFilterConfigIn project.filterConfig
-                                        |> asFilterConfigIn project
+                        case filterType of
+                            UserPackages ->
+                                { packages | user = isActive }
+                                    |> asPackagesFilterConfigIn project.filterConfig
+                                    |> asFilterConfigIn project
 
-                                DirectDeps ->
-                                    { packages | directDeps = isActive }
-                                        |> asPackagesFilterConfigIn project.filterConfig
-                                        |> asFilterConfigIn project
+                            DirectDeps ->
+                                { packages | directDeps = isActive }
+                                    |> asPackagesFilterConfigIn project.filterConfig
+                                    |> asFilterConfigIn project
 
-                                DepsOfDeps ->
-                                    { packages | depsOfDeps = isActive }
-                                        |> asPackagesFilterConfigIn project.filterConfig
-                                        |> asFilterConfigIn project
+                            DepsOfDeps ->
+                                { packages | depsOfDeps = isActive }
+                                    |> asPackagesFilterConfigIn project.filterConfig
+                                    |> asFilterConfigIn project
 
-                                ExposedModules ->
-                                    { modules | exposed = isActive }
-                                        |> asModulesFilterConfigIn project.filterConfig
-                                        |> asFilterConfigIn project
+                            ExposedModules ->
+                                { modules | exposed = isActive }
+                                    |> asModulesFilterConfigIn project.filterConfig
+                                    |> asFilterConfigIn project
 
-                                EffectModules ->
-                                    { modules | effect = isActive }
-                                        |> asModulesFilterConfigIn project.filterConfig
-                                        |> asFilterConfigIn project
+                            EffectModules ->
+                                { modules | effect = isActive }
+                                    |> asModulesFilterConfigIn project.filterConfig
+                                    |> asFilterConfigIn project
 
-                                NativeModules ->
-                                    { modules | native = isActive }
-                                        |> asModulesFilterConfigIn project.filterConfig
-                                        |> asFilterConfigIn project
+                            NativeModules ->
+                                { modules | native = isActive }
+                                    |> asModulesFilterConfigIn project.filterConfig
+                                    |> asFilterConfigIn project
 
-                                PortModules ->
-                                    { modules | port_ = isActive }
-                                        |> asModulesFilterConfigIn project.filterConfig
-                                        |> asFilterConfigIn project
+                            PortModules ->
+                                { modules | port_ = isActive }
+                                    |> asModulesFilterConfigIn project.filterConfig
+                                    |> asFilterConfigIn project
 
-                                ExposedDefinitions ->
-                                    { definitions | exposed = isActive }
-                                        |> asDefinitionsFilterConfigIn project.filterConfig
-                                        |> asFilterConfigIn project
+                            ExposedDefinitions ->
+                                { definitions | exposed = isActive }
+                                    |> asDefinitionsFilterConfigIn project.filterConfig
+                                    |> asFilterConfigIn project
                     )
     in
-        { model | project = newProject }
-            |> withNoCmd
+    { model | project = newProject }
+        |> withNoCmd
 
 
-projectPathChosen : String -> Model -> ( Model, Cmd Msg )
-projectPathChosen path model =
-    { model
-        | project =
-            Just
-                { rootPath = path
-                , index = Nothing
-                , selection = Selection.empty
-                , filterConfig = FilterConfig.empty
-                }
-    }
-        |> withCmds
-            [ Ports.sendMsgForElectron CreateIndex
-            , Ports.sendMsgForElectron (ChangeTitle (windowTitle (Just path)))
-            ]
+editorValue : SourceCode -> Model -> ( Model, Cmd Msg )
+editorValue sourceCode model =
+    let
+        selectedDefinitionId : Maybe DefinitionId
+        selectedDefinitionId =
+            model.project
+                |> Maybe.map .selection
+                |> Maybe.andThen Selection.selectedDefinitionId
+
+        maybeIndex : Maybe Index
+        maybeIndex =
+            model.project
+                |> Maybe.andThen .index
+
+        selectedDefinition : Maybe Definition
+        selectedDefinition =
+            Maybe.map2 (\index definitionId -> EDict.get definitionId index.definitions)
+                maybeIndex
+                selectedDefinitionId
+                |> Maybe.andThen identity
+    in
+    selectedDefinition
+        |> Maybe.map (\definition -> { definition | sourceCode = sourceCode })
+        |> Maybe.map (asDefinitionIn maybeIndex selectedDefinitionId)
+        |> Maybe.map (asIndexIn model.project)
+        |> Maybe.map (asProjectIn model)
+        |> Maybe.withDefault model
+        |> withNoCmd
 
 
-noProjectPathChosen : Model -> ( Model, Cmd Msg )
-noProjectPathChosen model =
-    model
+selectPackage : PackageId -> Model -> ( Model, Cmd Msg )
+selectPackage packageId model =
+    selectHelper model
+        (\selection ->
+            case selection of
+                NothingSelected ->
+                    PackageSelected packageId
+
+                PackageSelected _ ->
+                    PackageSelected packageId
+
+                ModuleSelected moduleId ->
+                    model.project
+                        |> Maybe.andThen .index
+                        |> Maybe.map
+                            (\index ->
+                                if Index.moduleIsInPackage index moduleId packageId then
+                                    PackageAndModuleSelected packageId moduleId
+                                else
+                                    PackageSelected packageId
+                            )
+                        |> Maybe.withDefault (PackageSelected packageId)
+
+                PackageAndModuleSelected oldPackageId _ ->
+                    if oldPackageId == packageId then
+                        selection
+                    else
+                        PackageSelected packageId
+
+                ModuleAndDefinitionSelected moduleId definitionId ->
+                    model.project
+                        |> Maybe.andThen .index
+                        |> Maybe.map
+                            (\index ->
+                                if Index.moduleIsInPackage index moduleId packageId then
+                                    AllSelected packageId moduleId definitionId
+                                else
+                                    PackageSelected packageId
+                            )
+                        |> Maybe.withDefault (PackageSelected packageId)
+
+                AllSelected oldPackageId _ _ ->
+                    if oldPackageId == packageId then
+                        selection
+                    else
+                        PackageSelected packageId
+        )
+
+
+selectModule : ModuleId -> Model -> ( Model, Cmd Msg )
+selectModule moduleId model =
+    selectHelper model
+        (\selection ->
+            case selection of
+                NothingSelected ->
+                    ModuleSelected moduleId
+
+                PackageSelected packageId ->
+                    PackageAndModuleSelected packageId moduleId
+
+                ModuleSelected _ ->
+                    ModuleSelected moduleId
+
+                PackageAndModuleSelected packageId _ ->
+                    PackageAndModuleSelected packageId moduleId
+
+                ModuleAndDefinitionSelected oldModuleId _ ->
+                    if moduleId == oldModuleId then
+                        selection
+                    else
+                        ModuleSelected moduleId
+
+                AllSelected packageId oldModuleId _ ->
+                    if moduleId == oldModuleId then
+                        selection
+                    else
+                        PackageAndModuleSelected packageId moduleId
+        )
+
+
+selectDefinition : DefinitionId -> Model -> ( Model, Cmd Msg )
+selectDefinition definitionId model =
+    selectHelper model
+        (\selection ->
+            case selection of
+                NothingSelected ->
+                    selection
+
+                PackageSelected _ ->
+                    selection
+
+                ModuleSelected moduleId ->
+                    ModuleAndDefinitionSelected moduleId definitionId
+
+                PackageAndModuleSelected packageId moduleId ->
+                    AllSelected packageId moduleId definitionId
+
+                ModuleAndDefinitionSelected moduleId _ ->
+                    ModuleAndDefinitionSelected moduleId definitionId
+
+                AllSelected packageId moduleId _ ->
+                    AllSelected packageId moduleId definitionId
+        )
+
+
+deselectPackage : Model -> ( Model, Cmd Msg )
+deselectPackage model =
+    selectHelper model
+        (\selection ->
+            case selection of
+                NothingSelected ->
+                    selection
+
+                PackageSelected _ ->
+                    NothingSelected
+
+                ModuleSelected _ ->
+                    selection
+
+                PackageAndModuleSelected _ moduleId ->
+                    ModuleSelected moduleId
+
+                ModuleAndDefinitionSelected _ _ ->
+                    selection
+
+                AllSelected _ moduleId definitionId ->
+                    ModuleAndDefinitionSelected moduleId definitionId
+        )
+
+
+deselectModule : Model -> ( Model, Cmd Msg )
+deselectModule model =
+    selectHelper model
+        (\selection ->
+            case selection of
+                NothingSelected ->
+                    selection
+
+                PackageSelected _ ->
+                    selection
+
+                ModuleSelected _ ->
+                    NothingSelected
+
+                PackageAndModuleSelected packageId _ ->
+                    PackageSelected packageId
+
+                ModuleAndDefinitionSelected _ _ ->
+                    NothingSelected
+
+                AllSelected packageId _ _ ->
+                    PackageSelected packageId
+        )
+
+
+deselectDefinition : Model -> ( Model, Cmd Msg )
+deselectDefinition model =
+    selectHelper model
+        (\selection ->
+            case selection of
+                NothingSelected ->
+                    selection
+
+                PackageSelected _ ->
+                    selection
+
+                ModuleSelected _ ->
+                    selection
+
+                PackageAndModuleSelected _ _ ->
+                    selection
+
+                ModuleAndDefinitionSelected moduleId _ ->
+                    ModuleSelected moduleId
+
+                AllSelected packageId moduleId _ ->
+                    PackageAndModuleSelected packageId moduleId
+        )
+
+
+selectHelper : Model -> (Selection -> Selection) -> ( Model, Cmd Msg )
+selectHelper model fn =
+    model.project
+        |> Maybe.map .selection
+        |> Maybe.map fn
+        |> Maybe.andThen (asSelectionIn model.project)
+        |> asProjectIn model
         |> withNoCmd
 
 
@@ -310,22 +521,22 @@ projectClosed model =
         |> withCmd (Ports.sendMsgForElectron (ChangeTitle (windowTitle Nothing)))
 
 
-indexCreated : Index -> Model -> ( Model, Cmd Msg )
-indexCreated index model =
-    { model
-        | project =
-            model.project
-                |> Maybe.map
-                    (\project -> { project | index = Just index })
-    }
-        |> withNoCmd
+windowTitle : Maybe String -> String
+windowTitle maybePath =
+    case maybePath of
+        Nothing ->
+            "Elm Browser"
 
-
-editorValue : String -> Model -> ( Model, Cmd Msg )
-editorValue sourceCode model =
-    -- TODO do something about the changed source code
-    model
-        |> withNoCmd
+        Just path ->
+            let
+                lastDirectory =
+                    path
+                        |> String.split "/"
+                        |> List.reverse
+                        |> List.head
+                        |> Maybe.withDefault path
+            in
+            "Elm Browser - " ++ lastDirectory
 
 
 asPackagesFilterConfigIn : FilterConfig -> PackagesFilterConfig -> FilterConfig
@@ -348,24 +559,25 @@ asFilterConfigIn project filterConfig =
     { project | filterConfig = filterConfig }
 
 
-subscriptions : Model -> Sub Msg
-subscriptions model =
-    Ports.getMsgForElm MsgForElm LogError
+asSelectionIn : Maybe Project -> Selection -> Maybe Project
+asSelectionIn maybeProject selection =
+    maybeProject
+        |> Maybe.map (\project -> { project | selection = selection })
 
 
-windowTitle : Maybe String -> String
-windowTitle maybePath =
-    case maybePath of
-        Nothing ->
-            "Elm Browser"
+asProjectIn : Model -> Maybe Project -> Model
+asProjectIn model maybeProject =
+    { model | project = maybeProject }
 
-        Just path ->
-            let
-                lastDirectory =
-                    path
-                        |> String.split "/"
-                        |> List.reverse
-                        |> List.head
-                        |> Maybe.withDefault path
-            in
-                "Elm Browser - " ++ lastDirectory
+
+asIndexIn : Maybe Project -> Maybe Index -> Maybe Project
+asIndexIn maybeProject maybeIndex =
+    maybeProject
+        |> Maybe.map (\project -> { project | index = maybeIndex })
+
+
+asDefinitionIn : Maybe Index -> Maybe DefinitionId -> Definition -> Maybe Index
+asDefinitionIn maybeIndex maybeDefinitionId definition =
+    Maybe.map2 (\index id -> { index | definitions = EDict.insert id definition index.definitions })
+        maybeIndex
+        maybeDefinitionId

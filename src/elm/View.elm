@@ -1,11 +1,10 @@
 module View exposing (view)
 
-import Html as H exposing (Html)
 import FilterConfig
+import Html as H exposing (Html)
 import Html.Attributes as HA
 import Html.Events as HE
 import Index
-import Selection
 import Types exposing (..)
 import View.Column exposing (..)
 import View.Footer exposing (..)
@@ -48,10 +47,10 @@ empty message =
             [ HA.class "empty-dialog__message" ]
             [ H.text message ]
         , H.button
-            [ HE.onClick AskForProject
+            [ HE.onClick CreateNewProject
             , HA.class "btn btn-large btn-default"
             ]
-            [ H.text "Open project" ]
+            [ H.text "Create new project" ]
         ]
 
 
@@ -64,7 +63,7 @@ project : Project -> Html Msg
 project project =
     project.index
         |> Maybe.map (\index -> projectWithContent project.selection index project.filterConfig)
-        |> Maybe.withDefault (projectWithContent Selection.empty Index.empty FilterConfig.empty)
+        |> Maybe.withDefault (projectWithContent NothingSelected Index.empty FilterConfig.empty)
 
 
 projectWithContent : Selection -> Index -> FilterConfig -> Html Msg

@@ -11,9 +11,9 @@ import Types exposing (..)
 sourceCode : Selection -> Index -> FilterConfig -> Html Msg
 sourceCode selection index filterConfig =
     let
-        sourceCode =
+        (SourceCode sourceCode) =
             Index.sourceCode selection index filterConfig
-                |> Maybe.withDefault ""
+                |> Maybe.withDefault (SourceCode "")
 
         language =
             index
@@ -21,23 +21,24 @@ sourceCode selection index filterConfig =
                 |> Maybe.withDefault Elm
                 |> languageToMode
     in
-        H.div
-            [ HA.class "bottom-table" ]
-            [ H.node "ace-widget"
-                [ HE.on "editor-content" (JD.succeed EditorChanged)
-                , HA.attribute "value" sourceCode
-                , HA.attribute "mode" language
-                ]
-                []
+    H.div
+        [ HA.class "bottom-table" ]
+        [ H.node "ace-widget"
+            [ HE.on "editor-content" (JD.succeed EditorChanged)
+            , HA.attribute "value" sourceCode
+            , HA.attribute "mode" language
             ]
+            []
+        ]
 
 
 languageToMode : Language -> String
 languageToMode language =
     "ace/mode/"
-        ++ case language of
-            Elm ->
-                "elm"
+        ++ (case language of
+                Elm ->
+                    "elm"
 
-            JavaScript ->
-                "javascript"
+                JavaScript ->
+                    "javascript"
+           )

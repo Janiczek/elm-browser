@@ -7,33 +7,35 @@ import Json.Encode as JE
 
 
 type Msg
-    = AskForProject
-    | CloseProject
+    = MsgForElm MsgForElm
+    | LogError String
+      -- user actions
+    | CreateNewProject
+      -- selection
+    | SelectPackage PackageId
+    | SelectModule ModuleId
+    | SelectDefinition DefinitionId
+      -- deselection
+    | DeselectPackage
+    | DeselectModule
+    | DeselectDefinition
+      -- other
+    | SetFilter FilterType Bool
+      -- app actions
     | ShowFooterMsg ( Html Msg, String )
     | HideFooterMsg
     | EditorChanged
-    | MsgForElm MsgForElm
-    | LogError String
-    | SelectOne Id
-    | SelectAnother Id
-    | Deselect Id
-    | SetFilter FilterType Bool
 
 
 type MsgForElectron
-    = ChooseProjectPath
-    | ErrorLogRequested String
-    | CreateIndex
+    = ErrorLogRequested String
     | ChangeTitle String
     | FetchEditorValue
 
 
 type MsgForElm
-    = ProjectPathChosen String
-    | NoProjectPathChosen
+    = EditorValue SourceCode
     | ProjectClosed
-    | IndexCreated Index
-    | EditorValue String
 
 
 type alias Model =
@@ -44,8 +46,6 @@ type alias Model =
 
 type alias Project =
     { rootPath : String
-
-    -- TODO RemoteData ↓
     , index : Maybe Index
     , selection : Selection
     , filterConfig : FilterConfig
@@ -94,32 +94,29 @@ type alias DefinitionsFilterConfig =
     }
 
 
-type alias Selection =
-    { packages : PackageIds
-
-    -- TODO is there any use for multiple modules selection?
-    , module_ : Maybe ModuleOnlyId
-
-    -- TODO maybe later: select more definitions -> diff
-    , definition : Maybe DefinitionOnlyId
-    }
+type Selection
+    = NothingSelected
+    | PackageSelected PackageId
+    | ModuleSelected ModuleId
+    | PackageAndModuleSelected PackageId ModuleId
+    | ModuleAndDefinitionSelected ModuleId DefinitionId
+    | AllSelected PackageId ModuleId DefinitionId
 
 
 type alias Index =
-    { packages : Packages
-    , modules : Modules
-    , definitions : Definitions
+    { packages : EveryDict PackageId Package
+    , modules : EveryDict ModuleId Module
+    , definitions : EveryDict DefinitionId Definition
     }
 
 
 type alias Package =
-    { author : String
-    , name : String
-    , version : String
+    { name : String
+    , version : Maybe String
     , dependencyType : DependencyType
     , containsEffectModules : Bool
     , containsNativeModules : Bool
-    , modules : ModuleIds
+    , modules : EverySet ModuleId
     }
 
 
@@ -129,7 +126,7 @@ type alias Module =
     , isEffect : Bool
     , isNative : Bool
     , isPort : Bool
-    , definitions : DefinitionIds
+    , definitions : EverySet DefinitionId
     , language : Language
     }
 
@@ -138,8 +135,12 @@ type alias Definition =
     { name : String
     , kind : DefinitionKind
     , isExposed : Bool
-    , sourceCode : String
+    , sourceCode : SourceCode
     }
+
+
+type SourceCode
+    = SourceCode String
 
 
 type alias Named a =
@@ -161,51 +162,20 @@ type DependencyType
 
 
 type Language
-    = -- TODO HTML, CSS?
-      Elm
+    = Elm
     | JavaScript
 
 
-type alias Packages =
-    EveryDict PackageOnlyId Package
+type PackageId
+    = PackageId String
 
 
-type alias Modules =
-    EveryDict ModuleOnlyId Module
+type ModuleId
+    = ModuleId String
 
 
-type alias Definitions =
-    EveryDict DefinitionOnlyId Definition
-
-
-type alias PackageIds =
-    EverySet PackageOnlyId
-
-
-type alias ModuleIds =
-    EverySet ModuleOnlyId
-
-
-type alias DefinitionIds =
-    EverySet DefinitionOnlyId
-
-
-type PackageOnlyId
-    = PackageOnlyId String
-
-
-type ModuleOnlyId
-    = ModuleOnlyId String
-
-
-type DefinitionOnlyId
-    = DefinitionOnlyId String
-
-
-type Id
-    = PackageId PackageOnlyId
-    | ModuleId ModuleOnlyId
-    | DefinitionId DefinitionOnlyId
+type DefinitionId
+    = DefinitionId String
 
 
 type DefinitionKind

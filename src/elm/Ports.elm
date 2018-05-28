@@ -1,6 +1,5 @@
 port module Ports exposing (..)
 
-import Index
 import Json.Decode as JD
 import Json.Encode as JE
 import Types exposing (..)
@@ -16,14 +15,8 @@ sendMsgForElectron : MsgForElectron -> Cmd msg
 sendMsgForElectron msg =
     msgForElectron <|
         case msg of
-            ChooseProjectPath ->
-                { tag = "ChooseProjectPath", data = JE.null }
-
             ErrorLogRequested err ->
                 { tag = "ErrorLogRequested", data = JE.string err }
-
-            CreateIndex ->
-                { tag = "CreateIndex", data = JE.null }
 
             ChangeTitle title ->
                 { tag = "ChangeTitle", data = JE.string title }
@@ -37,35 +30,16 @@ getMsgForElm tagger onError =
     msgForElm
         (\portData ->
             case portData.tag of
-                "ProjectPathChosen" ->
-                    case JD.decodeValue JD.string portData.data of
-                        Ok path ->
-                            tagger <| ProjectPathChosen path
-
-                        Err e ->
-                            onError <| "Invalid data for ProjectPathChosen: " ++ e
-
-                "NoProjectPathChosen" ->
-                    tagger <| NoProjectPathChosen
-
-                "ProjectClosed" ->
-                    tagger <| ProjectClosed
-
-                "IndexCreated" ->
-                    case JD.decodeValue Index.decoder portData.data of
-                        Ok index ->
-                            tagger <| IndexCreated (Index.normalize index)
-
-                        Err e ->
-                            onError <| "Invalid data for IndexCreated: " ++ e
-
                 "EditorValue" ->
                     case JD.decodeValue JD.string portData.data of
                         Ok sourceCode ->
-                            tagger <| EditorValue sourceCode
+                            tagger <| EditorValue (SourceCode sourceCode)
 
                         Err e ->
                             onError <| "Invalid data for EditorValue: " ++ e
+
+                "ProjectClosed" ->
+                    tagger ProjectClosed
 
                 _ ->
                     onError <| "Unexpected Msg for Elm: " ++ toString portData

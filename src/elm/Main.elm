@@ -2,8 +2,8 @@ module Main exposing (main)
 
 import App exposing (..)
 import Html
-import View exposing (view)
 import Types exposing (..)
+import View exposing (view)
 
 
 main : Program Never Model Msg
