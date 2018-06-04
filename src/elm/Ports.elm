@@ -1,6 +1,5 @@
 port module Ports exposing (..)
 
-import Json.Decode as JD
 import Json.Encode as JE
 import Types exposing (..)
 
@@ -21,23 +20,12 @@ sendMsgForElectron msg =
             ChangeTitle title ->
                 { tag = "ChangeTitle", data = JE.string title }
 
-            FetchEditorValue ->
-                { tag = "FetchEditorValue", data = JE.null }
-
 
 getMsgForElm : (MsgForElm -> msg) -> (String -> msg) -> Sub msg
 getMsgForElm tagger onError =
     msgForElm
         (\portData ->
             case portData.tag of
-                "EditorValue" ->
-                    case JD.decodeValue JD.string portData.data of
-                        Ok sourceCode ->
-                            tagger <| EditorValue (SourceCode sourceCode)
-
-                        Err e ->
-                            onError <| "Invalid data for EditorValue: " ++ e
-
                 "ProjectClosed" ->
                     tagger ProjectClosed
 

@@ -1,5 +1,6 @@
 module Types exposing (..)
 
+import Editor
 import EveryDict exposing (EveryDict)
 import EverySet exposing (EverySet)
 import Html exposing (Html)
@@ -24,23 +25,23 @@ type Msg
       -- app actions
     | ShowFooterMsg ( Html Msg, String )
     | HideFooterMsg
-    | EditorChanged
+      -- components
+    | EditorMsg Editor.Msg
 
 
 type MsgForElectron
     = ErrorLogRequested String
     | ChangeTitle String
-    | FetchEditorValue
 
 
 type MsgForElm
-    = EditorValue SourceCode
-    | ProjectClosed
+    = ProjectClosed
 
 
 type alias Model =
     { project : Maybe Project
     , footerMsg : Maybe ( Html Msg, String )
+    , editor : Editor.Model
     }
 
 

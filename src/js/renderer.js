@@ -23,24 +23,12 @@ app.ports.msgForElectron.subscribe(msgForElectron => {
 
     switch (tag) {
 
-    case 'ChooseProjectPath':
-        chooseProjectPath();
-        break;
-
     case 'ErrorLogRequested':
         errorLogRequested(data);
         break;
 
-    case 'CreateIndex':
-        createIndex();
-        break;
-
     case 'ChangeTitle':
         changeTitle(data);
-        break;
-
-    case 'FetchEditorValue':
-        fetchEditorValue();
         break;
 
     default:
@@ -51,35 +39,10 @@ app.ports.msgForElectron.subscribe(msgForElectron => {
 
 });
 
-const chooseProjectPath = () => {
-    const paths = mainProcess.selectDirectory();
-    if (paths === undefined) {
-        sendToElm('NoProjectPathChosen', null);
-    } else {
-        sendToElm('ProjectPathChosen', paths[0]);
-    }
-};
-
 const errorLogRequested = error => {
     console.error(error);
 };
 
-const createIndex = () => {
-    // TODO in future do things in the main thread, not the renderer thread?
-    // TODO real data
-    const index = require('../project_index_dummy.json');
-    sendToElm('IndexCreated', index);
-};
-
 const changeTitle = newTitle => {
     document.title = newTitle;
-};
-
-const fetchEditorValue = () => {
-    const ace = document.querySelector('ace-widget');
-    if (ace === undefined || ace === null) {
-        console.error("Elm requested editor value, but the editor can't be found!");
-    }
-    const value = ace.editor.getValue();
-    sendToElm('EditorValue', value);
 };

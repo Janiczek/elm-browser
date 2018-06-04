@@ -1,6 +1,7 @@
 module App exposing (init, subscriptions, update)
 
 import Cmd.Extra exposing (..)
+import Editor
 import EveryDict as EDict
 import EverySet as ESet
 import Html exposing (Html)
@@ -14,6 +15,7 @@ init : ( Model, Cmd Msg )
 init =
     { project = Nothing
     , footerMsg = Nothing
+    , editor = Editor.init ""
     }
         |> withNoCmd
 
@@ -29,8 +31,8 @@ update msg model =
         CreateNewProject ->
             createNewProject model
 
-        EditorChanged ->
-            editorChanged model
+        EditorMsg msg_ ->
+            editorMsg msg_ model
 
         ShowFooterMsg footerMsg ->
             showFooterMsg footerMsg model
@@ -40,9 +42,6 @@ update msg model =
 
         MsgForElm msgForElm ->
             case msgForElm of
-                EditorValue sourceCode ->
-                    editorValue sourceCode model
-
                 ProjectClosed ->
                     projectClosed model
 
@@ -211,13 +210,8 @@ singleton x =
                     }
                 }
     }
+        |> updateEditorContent
         |> withNoCmd
-
-
-editorChanged : Model -> ( Model, Cmd Msg )
-editorChanged model =
-    model
-        |> withCmd (Ports.sendMsgForElectron FetchEditorValue)
 
 
 showFooterMsg : ( Html Msg, String ) -> Model -> ( Model, Cmd Msg )
@@ -295,8 +289,8 @@ setFilter filterType isActive model =
         |> withNoCmd
 
 
-editorValue : SourceCode -> Model -> ( Model, Cmd Msg )
-editorValue sourceCode model =
+saveSourceCode : Model -> SourceCode -> Model
+saveSourceCode model sourceCode =
     let
         selectedDefinitionId : Maybe DefinitionId
         selectedDefinitionId =
@@ -322,7 +316,6 @@ editorValue sourceCode model =
         |> Maybe.map (asIndexIn model.project)
         |> Maybe.map (asProjectIn model)
         |> Maybe.withDefault model
-        |> withNoCmd
 
 
 selectPackage : PackageId -> Model -> ( Model, Cmd Msg )
@@ -512,13 +505,53 @@ selectHelper model fn =
         |> Maybe.map fn
         |> Maybe.andThen (asSelectionIn model.project)
         |> asProjectIn model
+        |> updateEditorContent
         |> withNoCmd
+
+
+updateEditorContent : Model -> Model
+updateEditorContent model =
+    let
+        (SourceCode code) =
+            Maybe.map2
+                (\index project ->
+                    Index.sourceCode project.selection index project.filterConfig
+                )
+                (model.project |> Maybe.andThen .index)
+                model.project
+                |> Maybe.andThen identity
+                |> Maybe.withDefault (SourceCode "")
+
+        newEditor =
+            model.editor
+                |> Editor.setContent code
+
+        modelWithSource =
+            { model | editor = newEditor }
+    in
+    modelWithSource
 
 
 projectClosed : Model -> ( Model, Cmd Msg )
 projectClosed model =
     { model | project = Nothing }
         |> withCmd (Ports.sendMsgForElectron (ChangeTitle (windowTitle Nothing)))
+
+
+editorMsg : Editor.Msg -> Model -> ( Model, Cmd Msg )
+editorMsg msg_ model =
+    let
+        ( newEditor, maybeNewContent ) =
+            Editor.update msg_ model.editor
+
+        modelWithNewEditor =
+            { model | editor = newEditor }
+    in
+    maybeNewContent
+        |> Maybe.map SourceCode
+        |> Maybe.map (saveSourceCode modelWithNewEditor)
+        |> Maybe.withDefault modelWithNewEditor
+        |> withNoCmd
 
 
 windowTitle : Maybe String -> String

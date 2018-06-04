@@ -1,5 +1,6 @@
 module View exposing (view)
 
+import Editor
 import FilterConfig
 import Html as H exposing (Html)
 import Html.Attributes as HA
@@ -22,14 +23,14 @@ view model =
 content : Model -> Html Msg
 content model =
     H.div [ HA.class "window-content" ]
-        [ maybeTable model.project
+        [ maybeTable model.editor model.project
         ]
 
 
-maybeTable : Maybe Project -> Html Msg
-maybeTable maybeProject =
+maybeTable : Editor.Model -> Maybe Project -> Html Msg
+maybeTable editor maybeProject =
     maybeProject
-        |> Maybe.map project
+        |> Maybe.map (project editor)
         |> Maybe.withDefault noProject
 
 
@@ -59,17 +60,17 @@ noProject =
     empty "No project open"
 
 
-project : Project -> Html Msg
-project project =
+project : Editor.Model -> Project -> Html Msg
+project editor project =
     project.index
-        |> Maybe.map (\index -> projectWithContent project.selection index project.filterConfig)
-        |> Maybe.withDefault (projectWithContent NothingSelected Index.empty FilterConfig.empty)
+        |> Maybe.map (\index -> projectWithContent editor project.selection index project.filterConfig)
+        |> Maybe.withDefault (projectWithContent editor NothingSelected Index.empty FilterConfig.empty)
 
 
-projectWithContent : Selection -> Index -> FilterConfig -> Html Msg
-projectWithContent selection index filterConfig =
+projectWithContent : Editor.Model -> Selection -> Index -> FilterConfig -> Html Msg
+projectWithContent editor selection index filterConfig =
     H.div
         [ HA.class "main-table" ]
         [ columns selection index filterConfig
-        , sourceCode selection index filterConfig
+        , sourceCode editor
         ]
