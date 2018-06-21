@@ -1,4 +1,4 @@
-module Editor exposing (Model, Msg, init, setContent, update, view)
+module Editor exposing (Config, Model, Msg, init, setContent, update, view)
 
 import Array.Hamt as Array exposing (Array)
 import Html as H exposing (Attribute, Html)
@@ -18,6 +18,10 @@ type Hover
     = NoHover
     | HoverLine Int
     | HoverChar Position
+
+
+type alias Config =
+    { isDisabled : Bool }
 
 
 type alias Position =
@@ -553,10 +557,10 @@ lineLength lines lineNum =
         |> String.length
 
 
-view : Model -> Html Msg
-view model =
+view : Config -> Model -> Html Msg
+view ({ isDisabled } as config) model =
     H.div
-        [ HA.style
+        ([ HA.style
             [ ( "display", "flex" )
             , ( "flex-direction", "row" )
             , ( "font-family", "monospace" )
@@ -565,17 +569,22 @@ view model =
             , ( "white-space", "pre" )
             , ( "flex", "1" )
             ]
-        , HE.on "keydown" keyDecoder
-        , HA.tabindex 0
-        , HA.class "editor"
-        ]
-        [ viewLineNumbers model
-        , viewContent model
+         , HA.tabindex 0
+         , HA.class "editor"
+         ]
+            ++ (if isDisabled then
+                    []
+                else
+                    [ HE.on "keydown" keyDecoder ]
+               )
+        )
+        [ viewLineNumbers config model
+        , viewContent config model
         ]
 
 
-viewLineNumbers : Model -> Html Msg
-viewLineNumbers model =
+viewLineNumbers : Config -> Model -> Html Msg
+viewLineNumbers { isDisabled } model =
     H.div
         [ HA.style
             [ ( "width", "2em" )
@@ -585,8 +594,11 @@ viewLineNumbers model =
             , ( "flex-direction", "column" )
             ]
         ]
-        (List.range 1 (Array.length model.lines)
-            |> List.map viewLineNumber
+        (if isDisabled then
+            []
+         else
+            List.range 1 (Array.length model.lines)
+                |> List.map viewLineNumber
         )
 
 
@@ -595,64 +607,79 @@ viewLineNumber n =
     H.span [] [ H.text (toString n) ]
 
 
-viewContent : Model -> Html Msg
-viewContent model =
+viewContent : Config -> Model -> Html Msg
+viewContent ({ isDisabled } as config) model =
     H.div
-        [ HA.style
+        ([ HA.style
             [ ( "position", "relative" )
             , ( "flex", "1" )
             , ( "background-color", "#f0f0f0" )
             , ( "user-select", "none" )
             ]
-        , HE.onClick GoToHoveredPosition
-        , HE.onMouseOut (Hover NoHover)
-        ]
-        [ viewLines model.position model.hover model.lines ]
+         ]
+            ++ (if isDisabled then
+                    []
+                else
+                    [ HE.onClick GoToHoveredPosition
+                    , HE.onMouseOut (Hover NoHover)
+                    ]
+               )
+        )
+        [ viewLines config model.position model.hover model.lines ]
 
 
-viewLines : Position -> Hover -> Array String -> Html Msg
-viewLines position hover lines =
+viewLines : Config -> Position -> Hover -> Array String -> Html Msg
+viewLines config position hover lines =
     H.div []
         (lines
-            |> Array.indexedMap (viewLine position hover lines)
+            |> Array.indexedMap (viewLine config position hover lines)
             |> Array.toList
         )
 
 
-viewLine : Position -> Hover -> Array String -> Int -> String -> Html Msg
-viewLine position hover lines line content =
+viewLine : Config -> Position -> Hover -> Array String -> Int -> String -> Html Msg
+viewLine ({ isDisabled } as config) position hover lines line content =
     H.div
-        [ HA.style
+        ([ HA.style
             [ ( "position", "absolute" )
             , ( "left", "0" )
             , ( "right", "0" )
             , ( "height", toString lineHeight ++ "px" )
             , ( "top", toString (toFloat line * lineHeight) ++ "px" )
             ]
-        , HE.onMouseOver (Hover (HoverLine line))
-        ]
+         ]
+            ++ (if isDisabled then
+                    []
+                else
+                    [ HE.onMouseOver (Hover (HoverLine line)) ]
+               )
+        )
         (if position.line == line && isLastColumn lines line position.column then
-            viewChars position hover lines line content
-                ++ [ viewCursor position nbsp ]
+            viewChars config position hover lines line content
+                ++ [ viewCursor config position nbsp ]
          else
-            viewChars position hover lines line content
+            viewChars config position hover lines line content
         )
 
 
-viewChars : Position -> Hover -> Array String -> Int -> String -> List (Html Msg)
-viewChars position hover lines line content =
+viewChars : Config -> Position -> Hover -> Array String -> Int -> String -> List (Html Msg)
+viewChars config position hover lines line content =
     content
         |> String.toList
-        |> List.indexedMap (viewChar position hover lines line)
+        |> List.indexedMap (viewChar config position hover lines line)
 
 
-viewChar : Position -> Hover -> Array String -> Int -> Int -> Char -> Html Msg
-viewChar position hover lines line column char =
+viewChar : Config -> Position -> Hover -> Array String -> Int -> Int -> Char -> Html Msg
+viewChar ({ isDisabled } as config) position hover lines line column char =
     if position.line == line && position.column == column then
-        viewCursor position (String.fromChar char)
+        viewCursor config position (String.fromChar char)
     else
         H.span
-            [ onHover { line = line, column = column } ]
+            (if isDisabled then
+                []
+             else
+                [ onHover { line = line, column = column } ]
+            )
             [ H.text (String.fromChar char) ]
 
 
@@ -661,12 +688,16 @@ nbsp =
     " "
 
 
-viewCursor : Position -> String -> Html Msg
-viewCursor position char =
+viewCursor : Config -> Position -> String -> Html Msg
+viewCursor { isDisabled } position char =
     H.span
-        [ HA.style [ ( "background-color", "orange" ) ]
-        , onHover position
-        ]
+        (if isDisabled then
+            []
+         else
+            [ HA.style [ ( "background-color", "orange" ) ]
+            , onHover position
+            ]
+        )
         [ H.text char ]
 
 
@@ -679,9 +710,9 @@ onHover position =
 
 fontSize : Float
 fontSize =
-    20
+    14
 
 
 lineHeight : Float
 lineHeight =
-    fontSize * 1.2
+    fontSize * 1.25

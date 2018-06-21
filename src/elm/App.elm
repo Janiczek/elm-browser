@@ -58,6 +58,9 @@ update msg model =
                 ProjectOpened path ->
                     projectOpened path model
 
+                FilesForIndex files ->
+                    filesForIndex files model
+
         LogError err ->
             logError err model
 
@@ -481,7 +484,7 @@ projectCreated path model =
     }
         |> withCmds
             [ Ports.sendMsgForElectron (ChangeTitle (windowTitle (Just path)))
-            , Ports.sendMsgForElectron CreateIndex
+            , Ports.sendMsgForElectron ListFilesForIndex
             ]
 
 
@@ -499,8 +502,20 @@ projectOpened path model =
     }
         |> withCmds
             [ Ports.sendMsgForElectron (ChangeTitle (windowTitle (Just path)))
-            , Ports.sendMsgForElectron CreateIndex
+            , Ports.sendMsgForElectron ListFilesForIndex
             ]
+
+
+filesForIndex : List ( String, SourceCode ) -> Model -> ( Model, Cmd Msg )
+filesForIndex files model =
+    let
+        _ =
+            files
+                -- TODO mold them into index!
+                |> Debug.log "files"
+    in
+    model
+        |> withNoCmd
 
 
 editorMsg : Editor.Msg -> Model -> ( Model, Cmd Msg )

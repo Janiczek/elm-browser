@@ -70,8 +70,6 @@ const replaceInFile = async (filename, from, to, replacement) => {
   await fs.writeFile(filename, outputString);
 };
 
-module.exports = {
-  replaceInFile
-};
+module.exports = replaceInFile;
 
 //replaceInFile('test.txt', {line: 6, column: 15}, {line: 6, column: 17}, 'Hello, world!');

@@ -1,7 +1,7 @@
 port module Ports exposing (..)
 
 import Elm.Syntax.Range exposing (Location)
-import Json.Decode as JD
+import Json.Decode as JD exposing (Decoder)
 import Json.Encode as JE
 import Types exposing (..)
 
@@ -43,8 +43,8 @@ sendMsgForElectron msg =
                 , data = JE.null
                 }
 
-            CreateIndex ->
-                { tag = "CreateIndex"
+            ListFilesForIndex ->
+                { tag = "ListFilesForIndex"
                 , data = JE.null
                 }
 
@@ -81,6 +81,23 @@ getMsgForElm tagger onError =
                         Err err ->
                             onError <| "Invalid data for ProjectOpened: " ++ err
 
+                "FilesForIndex" ->
+                    case JD.decodeValue filesForIndexDecoder portData.data of
+                        Ok files ->
+                            tagger (FilesForIndex files)
+
+                        Err err ->
+                            onError <| "Invalid data for FilesForIndex: " ++ err
+
                 _ ->
                     onError <| "Unexpected Msg for Elm: " ++ toString portData
+        )
+
+
+filesForIndexDecoder : Decoder (List ( String, SourceCode ))
+filesForIndexDecoder =
+    JD.list
+        (JD.map2 (,)
+            (JD.index 0 JD.string)
+            (JD.index 1 (JD.string |> JD.map SourceCode))
         )

@@ -20,10 +20,14 @@ sourceCode editor selection changes =
         changedCode =
             selectedId
                 |> Maybe.andThen (\id -> EDict.get id changes)
+
+        config : Editor.Config
+        config =
+            { isDisabled = selectedId == Nothing }
     in
     H.div
         [ HA.class "bottom-table" ]
-        [ Editor.view editor
+        [ Editor.view config editor
             |> H.map EditorMsg
         , Maybe.map2
             (\newCode id ->

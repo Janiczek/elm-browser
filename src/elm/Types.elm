@@ -38,13 +38,14 @@ type MsgForElectron
     | ReplaceInFile ReplaceInFileData
     | AskForNewProjectPath
     | AskForOpenProjectPath
-    | CreateIndex
+    | ListFilesForIndex
 
 
 type MsgForElm
     = ProjectClosed
     | ProjectCreated String
     | ProjectOpened String
+    | FilesForIndex (List ( String, SourceCode ))
 
 
 type alias ReplaceInFileData =

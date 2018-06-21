@@ -1,8 +1,15 @@
 const electron = require('electron');
 const {remote, ipcRenderer} = electron;
+const {requireTaskPool} = require('electron-remote');
 const Elm = require('../../dist/js/elm.js');
 
 const mainProcess = remote.require('./main.js');
+
+// do CPU-intensive stuff in another process
+const $replaceInFile = requireTaskPool(require.resolve('./replace-in-file.js'));
+const $copyFromTemplate = requireTaskPool(require.resolve('./copy-from-template.js'));
+const $listFilesForIndex = requireTaskPool(require.resolve('./list-files-for-index.js'));
+
 const app = Elm.Main.fullscreen();
 
 const sendToElm = (tag, data) => {
@@ -11,17 +18,18 @@ const sendToElm = (tag, data) => {
 
 const askForNewProjectPath = () => {
     const path = chooseProjectPath();
-    mainProcess.copyFromTemplate(path);
+    $copyFromTemplate(mainProcess.appPath, path);
     sendToElm('ProjectCreated', path);
-}
+};
 
 const askForOpenProjectPath = () => {
     const path = chooseProjectPath();
     sendToElm('ProjectOpened', path);
-}
+};
 
-const createIndex = () => {
-    doSomethingAboutCreatingIndex(); // TODO
+const listFilesForIndex = async (path) => {
+    const files = await $listFilesForIndex(path);
+    sendToElm('FilesForIndex', files);
 };
 
 ipcRenderer.on('create-project', askForNewProjectPath);
@@ -46,7 +54,7 @@ app.ports.msgForElectron.subscribe(msgForElectron => {
         break;
 
     case 'ReplaceInFile':
-        ipcRenderer.send('replace-in-file', data);
+        $replaceInFile(data.filepath, data.from, data.to, data.replacement);
         break;
 
     case 'AskForNewProjectPath':
@@ -57,8 +65,8 @@ app.ports.msgForElectron.subscribe(msgForElectron => {
         askForOpenProjectPath();
         break;
 
-    case 'CreateIndex':
-        createIndex();
+    case 'ListFilesForIndex':
+        listFilesForIndex();
         break;
         
     default:
