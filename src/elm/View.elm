@@ -50,9 +50,14 @@ empty message =
             [ H.text message ]
         , H.button
             [ HE.onClick CreateNewProject
-            , HA.class "btn btn-large btn-default"
+            , HA.class "btn btn-large btn-default button--create-new-project"
             ]
             [ H.text "Create new project" ]
+        , H.button
+            [ HE.onClick OpenProject
+            , HA.class "btn btn-large btn-default button--open-project"
+            ]
+            [ H.text "Open a project" ]
         ]
 
 

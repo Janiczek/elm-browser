@@ -1,6 +1,7 @@
 port module Ports exposing (..)
 
 import Elm.Syntax.Range exposing (Location)
+import Json.Decode as JD
 import Json.Encode as JE
 import Types exposing (..)
 
@@ -32,6 +33,21 @@ sendMsgForElectron msg =
                         ]
                 }
 
+            AskForNewProjectPath ->
+                { tag = "AskForNewProjectPath"
+                , data = JE.null
+                }
+
+            AskForOpenProjectPath ->
+                { tag = "AskForOpenProjectPath"
+                , data = JE.null
+                }
+
+            CreateIndex ->
+                { tag = "CreateIndex"
+                , data = JE.null
+                }
+
 
 encodeLocation : Location -> JE.Value
 encodeLocation { row, column } =
@@ -48,6 +64,22 @@ getMsgForElm tagger onError =
             case portData.tag of
                 "ProjectClosed" ->
                     tagger ProjectClosed
+
+                "ProjectCreated" ->
+                    case JD.decodeValue JD.string portData.data of
+                        Ok path ->
+                            tagger (ProjectCreated path)
+
+                        Err err ->
+                            onError <| "Invalid data for ProjectCreated: " ++ err
+
+                "ProjectOpened" ->
+                    case JD.decodeValue JD.string portData.data of
+                        Ok path ->
+                            tagger (ProjectOpened path)
+
+                        Err err ->
+                            onError <| "Invalid data for ProjectOpened: " ++ err
 
                 _ ->
                     onError <| "Unexpected Msg for Elm: " ++ toString portData

@@ -13,6 +13,7 @@ type Msg
     | LogError String
       -- user actions
     | CreateNewProject
+    | OpenProject
     | SaveChange DefinitionId SourceCode
       -- selection
     | SelectPackage PackageId
@@ -35,10 +36,15 @@ type MsgForElectron
     = ErrorLogRequested String
     | ChangeTitle String
     | ReplaceInFile ReplaceInFileData
+    | AskForNewProjectPath
+    | AskForOpenProjectPath
+    | CreateIndex
 
 
 type MsgForElm
     = ProjectClosed
+    | ProjectCreated String
+    | ProjectOpened String
 
 
 type alias ReplaceInFileData =

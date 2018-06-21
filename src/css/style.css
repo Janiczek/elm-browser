@@ -12,6 +12,10 @@
   margin-bottom: 16px;
 }
 
+.button--create-new-project {
+  margin-bottom: 8px;
+}
+
 .elm-logo {
   /* maybe make the logo 120px in the file? what about pixel ratios? @2x etc files? */
   width: 120px;

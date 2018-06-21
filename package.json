@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "async-file": "^2.0.2",
-    "async-file-reader": "^0.1.1"
+    "async-file-reader": "^0.1.1",
+    "ncp": "^2.0.0"
   }
 }

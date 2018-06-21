@@ -4,7 +4,7 @@ import Cmd.Extra exposing (..)
 import Editor
 import Elm.Syntax.Range exposing (Location)
 import EveryDict as EDict exposing (EveryDict)
-import EverySet as ESet
+import FilterConfig
 import Html exposing (Html)
 import Index
 import Ports
@@ -32,6 +32,9 @@ update msg model =
         CreateNewProject ->
             createNewProject model
 
+        OpenProject ->
+            openProject model
+
         SaveChange definitionId newSourceCode ->
             saveChange definitionId newSourceCode model
 
@@ -48,6 +51,12 @@ update msg model =
             case msgForElm of
                 ProjectClosed ->
                     projectClosed model
+
+                ProjectCreated path ->
+                    projectCreated path model
+
+                ProjectOpened path ->
+                    projectOpened path model
 
         LogError err ->
             logError err model
@@ -76,150 +85,14 @@ update msg model =
 
 createNewProject : Model -> ( Model, Cmd Msg )
 createNewProject model =
-    let
-        userPackageId =
-            PackageId "author/project"
+    model
+        |> withCmd (Ports.sendMsgForElectron AskForNewProjectPath)
 
-        mainModuleId =
-            ModuleId "Main"
 
-        basicsId =
-            ModuleId "Basics"
-
-        listId =
-            ModuleId "List"
-
-        mainId =
-            DefinitionId "Main.main"
-
-        absId =
-            DefinitionId "Basics.abs"
-
-        singletonId =
-            DefinitionId "List.singleton"
-    in
-    { model
-        | project =
-            Just
-                { rootPath = "/tmp/elm-browser-project/"
-                , index =
-                    Just
-                        { packages =
-                            [ ( userPackageId
-                              , { name = "author/project"
-                                , version = Nothing
-                                , dependencyType = UserPackage
-                                , containsEffectModules = False
-                                , containsNativeModules = False
-                                , modules = ESet.fromList [ mainModuleId ]
-                                }
-                              )
-                            , ( PackageId "elm/core"
-                              , { name = "elm/core"
-                                , version = Just "1.0.0"
-                                , dependencyType = DirectDependency
-                                , containsEffectModules = True
-                                , containsNativeModules = True
-                                , modules = ESet.fromList [ basicsId, listId ]
-                                }
-                              )
-                            ]
-                                |> EDict.fromList
-                        , modules =
-                            [ ( mainModuleId
-                              , { name = "Main"
-                                , path = "src/Main.elm"
-                                , isExposed = True
-                                , isEffect = False
-                                , isNative = False
-                                , isPort = False
-                                , definitions = ESet.fromList [ mainId ]
-                                , language = Elm
-                                }
-                              )
-                            , ( basicsId
-                              , { name = "Basics"
-                                , path = "elm-stuff/packages/elm-lang/core/5.1.1/src/Basics.elm"
-                                , isExposed = True
-                                , isEffect = False
-                                , isNative = False
-                                , isPort = False
-                                , definitions = ESet.fromList [ absId ]
-                                , language = Elm
-                                }
-                              )
-                            , ( listId
-                              , { name = "List"
-                                , path = "elm-stuff/packages/elm-lang/core/5.1.1/src/List.elm"
-                                , isExposed = True
-                                , isEffect = False
-                                , isNative = False
-                                , isPort = False
-                                , definitions = ESet.fromList [ singletonId ]
-                                , language = Elm
-                                }
-                              )
-                            ]
-                                |> EDict.fromList
-                        , definitions =
-                            [ ( mainId
-                              , { name = "main"
-                                , kind = Constant { type_ = "Html msg" }
-                                , isExposed = True
-                                , sourceCode = SourceCode """main : Html msg
-main =
-    Html.text \"\""""
-                                , range = { start = { row = 5, column = 0 }, end = { row = 7, column = 15 } }
-                                }
-                              )
-                            , ( absId
-                              , { name = "abs"
-                                , kind = Constant { type_ = "number -> number" }
-                                , isExposed = True
-                                , sourceCode = SourceCode """abs : number -> number
-abs number =
-    if number < 0 then
-        negate number
-    else
-        number"""
-                                , range = { start = { row = 20, column = 0 }, end = { row = 25, column = 13 } }
-                                }
-                              )
-                            , ( singletonId
-                              , { name = "singleton"
-                                , kind = Constant { type_ = "a -> List a" }
-                                , isExposed = True
-                                , sourceCode = SourceCode """singleton : a -> List a
-singleton x =
-    [x]"""
-                                , range = { start = { row = 13, column = 0 }, end = { row = 15, column = 6 } }
-                                }
-                              )
-                            ]
-                                |> EDict.fromList
-                        }
-                , selection = ModuleAndDefinitionSelected mainModuleId mainId
-                , filterConfig =
-                    { packages =
-                        { user = False
-                        , directDeps = False
-                        , depsOfDeps = False
-                        }
-                    , modules =
-                        { exposed = False
-                        , effect = False
-                        , native = False
-                        , port_ = False
-                        }
-                    , definitions =
-                        { exposed = False
-                        }
-                    }
-                , changes = EDict.empty
-                }
-    }
-        |> updateEditorContent
-        |> withNoCmd
+openProject : Model -> ( Model, Cmd Msg )
+openProject model =
+    model
+        |> withCmd (Ports.sendMsgForElectron AskForOpenProjectPath)
 
 
 showFooterMsg : ( Html Msg, String ) -> Model -> ( Model, Cmd Msg )
@@ -597,6 +470,42 @@ projectClosed : Model -> ( Model, Cmd Msg )
 projectClosed model =
     { model | project = Nothing }
         |> withCmd (Ports.sendMsgForElectron (ChangeTitle (windowTitle Nothing)))
+
+
+projectCreated : String -> Model -> ( Model, Cmd Msg )
+projectCreated path model =
+    { model
+        | project =
+            Just
+                { rootPath = path
+                , index = Nothing
+                , selection = NothingSelected
+                , filterConfig = FilterConfig.empty
+                , changes = EDict.empty
+                }
+    }
+        |> withCmds
+            [ Ports.sendMsgForElectron (ChangeTitle (windowTitle (Just path)))
+            , Ports.sendMsgForElectron CreateIndex
+            ]
+
+
+projectOpened : String -> Model -> ( Model, Cmd Msg )
+projectOpened path model =
+    { model
+        | project =
+            Just
+                { rootPath = path
+                , index = Nothing
+                , selection = NothingSelected
+                , filterConfig = FilterConfig.empty
+                , changes = EDict.empty
+                }
+    }
+        |> withCmds
+            [ Ports.sendMsgForElectron (ChangeTitle (windowTitle (Just path)))
+            , Ports.sendMsgForElectron CreateIndex
+            ]
 
 
 editorMsg : Editor.Msg -> Model -> ( Model, Cmd Msg )
