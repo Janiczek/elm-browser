@@ -1,6 +1,7 @@
 module View exposing (view)
 
 import Editor
+import EveryDict as EDict exposing (EveryDict)
 import FilterConfig
 import Html as H exposing (Html)
 import Html.Attributes as HA
@@ -63,14 +64,20 @@ noProject =
 project : Editor.Model -> Project -> Html Msg
 project editor project =
     project.index
-        |> Maybe.map (\index -> projectWithContent editor project.selection index project.filterConfig)
-        |> Maybe.withDefault (projectWithContent editor NothingSelected Index.empty FilterConfig.empty)
+        |> Maybe.map (\index -> projectWithContent editor project.selection index project.filterConfig project.changes)
+        |> Maybe.withDefault (projectWithContent editor NothingSelected Index.empty FilterConfig.empty EDict.empty)
 
 
-projectWithContent : Editor.Model -> Selection -> Index -> FilterConfig -> Html Msg
-projectWithContent editor selection index filterConfig =
+projectWithContent :
+    Editor.Model
+    -> Selection
+    -> Index
+    -> FilterConfig
+    -> EveryDict DefinitionId SourceCode
+    -> Html Msg
+projectWithContent editor selection index filterConfig changes =
     H.div
         [ HA.class "main-table" ]
-        [ columns selection index filterConfig
-        , sourceCode editor
+        [ columns selection index filterConfig changes
+        , sourceCode editor selection changes
         ]

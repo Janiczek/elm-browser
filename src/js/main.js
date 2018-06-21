@@ -1,6 +1,7 @@
 const electron = require('electron');
 const {app, dialog, Menu, ipcMain} = electron;
 const BrowserWindow = electron.BrowserWindow;
+const {replaceInFile} = require('./replace-in-file.js');
 
 const path = require('path');
 const url = require('url');
@@ -67,6 +68,10 @@ app.on('activate', function () {
     if (mainWindow === null) {
         createWindow();
     }
+});
+
+ipcMain.on('replace-in-file', (ev, data) => {
+    replaceInFile(data.filepath, data.from, data.to, data.replacement);
 });
 
 exports.selectDirectory = selectDirectory;

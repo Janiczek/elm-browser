@@ -1,94 +1,94 @@
 .empty-dialog {
-    display: flex;
-    flex: 1;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
 }
 
 .empty-dialog__message {
-    color: #aaa;
-    font-size: 24px;
-    margin-bottom: 16px;
+  color: #aaa;
+  font-size: 24px;
+  margin-bottom: 16px;
 }
 
 .elm-logo {
-    /* maybe make the logo 120px in the file? what about pixel ratios? @2x etc files? */
-    width: 120px;
-    height: 120px;
-    margin-bottom: 16px;
+  /* maybe make the logo 120px in the file? what about pixel ratios? @2x etc files? */
+  width: 120px;
+  height: 120px;
+  margin-bottom: 16px;
 }
 
 .title.footer__progress {
-    text-align: left;
-    padding-left: 8px;
+  text-align: left;
+  padding-left: 8px;
 }
 
 .icon.icon--fa:before {
-    font-family: 'FontAwesome';
+  font-family: 'FontAwesome';
 }
 
 .icon.icon--mfizz:before {
-    font-family: 'FontMfizz';
+  font-family: 'FontMfizz';
 }
 
 .footer__icon:before {
-    display: inline-block;
-    text-align: center;
-    margin-right: 8px;
-    font-size: 16px;
-    width: 16px;
-    top: 2px;
+  display: inline-block;
+  text-align: center;
+  margin-right: 8px;
+  font-size: 16px;
+  width: 16px;
+  top: 2px;
 }
 
 .btn-group .btn+.btn.active {
-   border-left: 1px solid #c2c0c2 !important
+  border-left: 1px solid #c2c0c2 !important
 }
 
 .spinner:before {
-    animation: spinner 2s linear infinite;
-    content: '\e89f';
+  animation: spinner 2s linear infinite;
+  content: '\e89f';
 }
 
 @keyframes spinner {
-    0%, 100% { content: '\e89f'; } /* .icon-progress-0 through 3 */
-    25%      { content: '\e8a0'; }
-    50%      { content: '\e8a1'; }
-    75%      { content: '\e8a2'; }
+  0%, 100% { content: '\e89f'; } /* .icon-progress-0 through 3 */
+  25%      { content: '\e8a0'; }
+  50%      { content: '\e8a1'; }
+  75%      { content: '\e8a2'; }
 }
 
 .main-table {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
 }
 
 .top-table {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    border-bottom: 1px solid #ddd;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  border-bottom: 1px solid #ddd;
 }
 
 .top-table__headings {
-    display: flex;
-    flex-direction: row;
-    width: 100%;
-    background-color: #f5f5f4;
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  background-color: #f5f5f4;
 }
 
 .top-table__heading {
-    display: flex;
-    flex: 1;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    border-right: 1px solid #ddd;
-    border-bottom: 1px solid #ddd;
-    color: #888;
-    font-weight: 400;
-    font-size: 12px;
-    padding: 2px 15px;
+  display: flex;
+  flex: 1;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  border-right: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
+  color: #888;
+  font-weight: 400;
+  font-size: 12px;
+  padding: 2px 15px;
 }
 
 .top-table__heading__label {
@@ -109,23 +109,23 @@
 }
 
 .top-table__content {
-    display: flex;
-    flex-direction: row;
-    width: 100%;
-    flex: 1;
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  flex: 1;
 }
 
 .inner-table {
-    display: flex;
-    flex: 1;
-    overflow-y: auto;
-    border-right: 1px solid #ddd;
+  display: flex;
+  flex: 1;
+  overflow-y: auto;
+  border-right: 1px solid #ddd;
 }
 
 .bottom-table {
-    display: flex;
-    flex: 1;
-    padding: 8px;
+  display: flex;
+  flex: 1;
+  padding: 8px;
 }
 
 .editor:focus {
@@ -133,9 +133,14 @@
 }
 
 .identifier {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.identifier__content--dirty {
+  color: #f00;
+  font-weight: bold;
 }
 
 .identifier__content--user-package {
@@ -148,23 +153,23 @@
 }
 
 .identifier__divider {
-    color: #aaa;
-    padding: 0 4px;
+  color: #aaa;
+  padding: 0 4px;
 }
 
 .identifier__metadata {
-    color: #aaa;
-    text-align: right;
+  color: #aaa;
+  text-align: right;
 }
 
 .identifier__metadata .icon {
-    color: #000;
+  color: #000;
 }
 
 .row--active {
-    background-color: #D5E6FA;
+  background-color: #D5E6FA;
 }
 
 .row__icon {
-    padding-left: 8px;
+  padding-left: 8px;
 }

@@ -1,5 +1,6 @@
 module View.Row exposing (definition, module_, package)
 
+import EveryDict as EDict exposing (EveryDict)
 import Html as H exposing (Html)
 import Html.Attributes as HA
 import Html.Events as HE
@@ -28,14 +29,24 @@ module_ selection moduleId module_ =
         (moduleRow module_)
 
 
-definition : Selection -> DefinitionId -> Definition -> Html Msg
-definition selection definitionId definition =
+definition :
+    Selection
+    -> EveryDict DefinitionId SourceCode
+    -> DefinitionId
+    -> Definition
+    -> Html Msg
+definition selection changes definitionId definition =
+    let
+        isDirty =
+            changes
+                |> EDict.member definitionId
+    in
     row
         definitionId
         SelectDefinition
         DeselectDefinition
         (Selection.isDefinitionSelected definitionId selection)
-        (definitionRow definition)
+        (definitionRow isDirty definition)
 
 
 packageRow : Package -> Html Msg
@@ -92,12 +103,18 @@ moduleRow { name, isExposed, isNative, isEffect, isPort } =
         ]
 
 
-definitionRow : CommonDefinition a -> Html Msg
-definitionRow { name, isExposed } =
+definitionRow : Bool -> CommonDefinition a -> Html Msg
+definitionRow isDirty { name, isExposed } =
     H.div
         [ HA.class "identifier" ]
         [ H.span
-            [ HA.class "identifier__content" ]
+            [ HA.classList
+                [ ( "identifier__content", True )
+
+                -- TODO css
+                , ( "identifier__content--dirty", isDirty )
+                ]
+            ]
             [ H.text name ]
         , H.span
             [ HA.class "identifier__metadata" ]

@@ -143,7 +143,7 @@ update msg model =
         Hover hover ->
             { model | hover = hover }
                 |> sanitizeHover
-                |> withSource
+                |> withNoSource
 
         GoToHoveredPosition ->
             { model
@@ -160,7 +160,7 @@ update msg model =
                         HoverChar position ->
                             position
             }
-                |> withSource
+                |> withNoSource
 
 
 withNoSource : Model -> ( Model, Maybe String )

@@ -1,5 +1,6 @@
 module Index exposing (..)
 
+import Elm.Syntax.Range as Range
 import EveryDict as EDict exposing (EveryDict)
 import EverySet as ESet exposing (EverySet)
 import Json.Decode as JD exposing (Decoder)
@@ -11,11 +12,12 @@ import Utils
 
 definition : Decoder Definition
 definition =
-    JD.map4 Definition
+    JD.map5 Definition
         (JD.field "name" JD.string)
         definitionKind
         (JD.field "isExposed" JD.bool)
         (JD.field "sourceCode" (JD.string |> JD.map SourceCode))
+        (JD.field "range" Range.decode)
 
 
 language : Decoder Language
@@ -89,11 +91,26 @@ typeAlias =
     JD.succeed TypeAlias
 
 
-sourceCode : Selection -> Index -> FilterConfig -> Maybe SourceCode
-sourceCode selection index filterConfig =
-    selectedModuleIdAndDefinition selection index
-        |> ifDefinitionCanBeShown selection index filterConfig
-        |> Maybe.map (\( _, definition ) -> definition.sourceCode)
+sourceCode : Selection -> Index -> FilterConfig -> EveryDict DefinitionId SourceCode -> Maybe SourceCode
+sourceCode selection index filterConfig changes =
+    let
+        definitionId : Maybe DefinitionId
+        definitionId =
+            Selection.selectedDefinitionId selection
+
+        moduleIdAndDefinition : Maybe ( ModuleId, Definition )
+        moduleIdAndDefinition =
+            selectedModuleIdAndDefinition selection index
+                |> ifDefinitionCanBeShown selection index filterConfig
+    in
+    Maybe.map2
+        (\definitionId ( _, definition ) ->
+            changes
+                |> EDict.get definitionId
+                |> Maybe.withDefault definition.sourceCode
+        )
+        definitionId
+        moduleIdAndDefinition
 
 
 selectedLanguage : Selection -> Index -> Maybe Language

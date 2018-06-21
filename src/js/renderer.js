@@ -31,6 +31,10 @@ app.ports.msgForElectron.subscribe(msgForElectron => {
         changeTitle(data);
         break;
 
+    case 'ReplaceInFile':
+        ipcRenderer.send('replace-in-file', data);
+        break;
+
     default:
         console.error({error: 'Unexpected Msg for Electron', msg: msgForElectron});
         break;

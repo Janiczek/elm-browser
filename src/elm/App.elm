@@ -2,7 +2,8 @@ module App exposing (init, subscriptions, update)
 
 import Cmd.Extra exposing (..)
 import Editor
-import EveryDict as EDict
+import Elm.Syntax.Range exposing (Location)
+import EveryDict as EDict exposing (EveryDict)
 import EverySet as ESet
 import Html exposing (Html)
 import Index
@@ -30,6 +31,9 @@ update msg model =
     case msg of
         CreateNewProject ->
             createNewProject model
+
+        SaveChange definitionId newSourceCode ->
+            saveChange definitionId newSourceCode model
 
         EditorMsg msg_ ->
             editorMsg msg_ model
@@ -124,6 +128,7 @@ createNewProject model =
                         , modules =
                             [ ( mainModuleId
                               , { name = "Main"
+                                , path = "src/Main.elm"
                                 , isExposed = True
                                 , isEffect = False
                                 , isNative = False
@@ -134,6 +139,7 @@ createNewProject model =
                               )
                             , ( basicsId
                               , { name = "Basics"
+                                , path = "elm-stuff/packages/elm-lang/core/5.1.1/src/Basics.elm"
                                 , isExposed = True
                                 , isEffect = False
                                 , isNative = False
@@ -144,6 +150,7 @@ createNewProject model =
                               )
                             , ( listId
                               , { name = "List"
+                                , path = "elm-stuff/packages/elm-lang/core/5.1.1/src/List.elm"
                                 , isExposed = True
                                 , isEffect = False
                                 , isNative = False
@@ -161,8 +168,8 @@ createNewProject model =
                                 , isExposed = True
                                 , sourceCode = SourceCode """main : Html msg
 main =
-    Html.text ""
-"""
+    Html.text \"\""""
+                                , range = { start = { row = 5, column = 0 }, end = { row = 7, column = 15 } }
                                 }
                               )
                             , ( absId
@@ -174,8 +181,8 @@ abs number =
     if number < 0 then
         negate number
     else
-        number
-"""
+        number"""
+                                , range = { start = { row = 20, column = 0 }, end = { row = 25, column = 13 } }
                                 }
                               )
                             , ( singletonId
@@ -184,8 +191,8 @@ abs number =
                                 , isExposed = True
                                 , sourceCode = SourceCode """singleton : a -> List a
 singleton x =
-    [x]
-"""
+    [x]"""
+                                , range = { start = { row = 13, column = 0 }, end = { row = 15, column = 6 } }
                                 }
                               )
                             ]
@@ -208,6 +215,7 @@ singleton x =
                         { exposed = False
                         }
                     }
+                , changes = EDict.empty
                 }
     }
         |> updateEditorContent
@@ -289,33 +297,86 @@ setFilter filterType isActive model =
         |> withNoCmd
 
 
-saveSourceCode : Model -> SourceCode -> Model
-saveSourceCode model sourceCode =
+markAsDirty : Model -> SourceCode -> Model
+markAsDirty model sourceCode =
     let
         selectedDefinitionId : Maybe DefinitionId
         selectedDefinitionId =
             model.project
                 |> Maybe.map .selection
                 |> Maybe.andThen Selection.selectedDefinitionId
+    in
+    Maybe.map2
+        (\project definitionId ->
+            project.changes
+                |> EDict.insert definitionId sourceCode
+                |> asChangesIn model.project
+                |> asProjectIn model
+        )
+        model.project
+        selectedDefinitionId
+        |> Maybe.withDefault model
 
-        maybeIndex : Maybe Index
-        maybeIndex =
+
+saveChange : DefinitionId -> SourceCode -> Model -> ( Model, Cmd Msg )
+saveChange definitionId (SourceCode sourceCode) model =
+    let
+        definition : Maybe Definition
+        definition =
             model.project
                 |> Maybe.andThen .index
+                |> Maybe.andThen (\index -> EDict.get definitionId index.definitions)
 
-        selectedDefinition : Maybe Definition
-        selectedDefinition =
-            Maybe.map2 (\index definitionId -> EDict.get definitionId index.definitions)
-                maybeIndex
-                selectedDefinitionId
+        filepath : Maybe String
+        filepath =
+            Maybe.map2 (\selection index -> Index.moduleForSelectedDefinition selection index)
+                (model.project |> Maybe.map .selection)
+                (model.project |> Maybe.andThen .index)
                 |> Maybe.andThen identity
+                |> Maybe.map .path
+
+        from : Maybe Location
+        from =
+            definition
+                |> Maybe.map (.range >> .start)
+
+        to : Maybe Location
+        to =
+            definition
+                |> Maybe.map (.range >> .end)
+
+        replaceInFileCmd : Cmd Msg
+        replaceInFileCmd =
+            Maybe.map4
+                (\definition filepath from to ->
+                    Ports.sendMsgForElectron
+                        (ReplaceInFile
+                            { filepath = filepath
+                            , from = from
+                            , to = to
+                            , replacement = sourceCode
+                            }
+                        )
+                )
+                definition
+                filepath
+                from
+                to
+                |> Maybe.withDefault Cmd.none
     in
-    selectedDefinition
-        |> Maybe.map (\definition -> { definition | sourceCode = sourceCode })
-        |> Maybe.map (asDefinitionIn maybeIndex selectedDefinitionId)
-        |> Maybe.map (asIndexIn model.project)
-        |> Maybe.map (asProjectIn model)
-        |> Maybe.withDefault model
+    model
+        |> removeChange definitionId
+        |> withCmd replaceInFileCmd
+
+
+removeChange : DefinitionId -> Model -> Model
+removeChange definitionId model =
+    model.project
+        |> Maybe.map .changes
+        |> Maybe.map (EDict.remove definitionId)
+        |> Maybe.map (asChangesIn model.project)
+        |> Maybe.withDefault model.project
+        |> asProjectIn model
 
 
 selectPackage : PackageId -> Model -> ( Model, Cmd Msg )
@@ -515,7 +576,7 @@ updateEditorContent model =
         (SourceCode code) =
             Maybe.map2
                 (\index project ->
-                    Index.sourceCode project.selection index project.filterConfig
+                    Index.sourceCode project.selection index project.filterConfig project.changes
                 )
                 (model.project |> Maybe.andThen .index)
                 model.project
@@ -549,7 +610,7 @@ editorMsg msg_ model =
     in
     maybeNewContent
         |> Maybe.map SourceCode
-        |> Maybe.map (saveSourceCode modelWithNewEditor)
+        |> Maybe.map (markAsDirty modelWithNewEditor)
         |> Maybe.withDefault modelWithNewEditor
         |> withNoCmd
 
@@ -596,6 +657,12 @@ asSelectionIn : Maybe Project -> Selection -> Maybe Project
 asSelectionIn maybeProject selection =
     maybeProject
         |> Maybe.map (\project -> { project | selection = selection })
+
+
+asChangesIn : Maybe Project -> EveryDict DefinitionId SourceCode -> Maybe Project
+asChangesIn maybeProject changes =
+    maybeProject
+        |> Maybe.map (\project -> { project | changes = changes })
 
 
 asProjectIn : Model -> Maybe Project -> Model

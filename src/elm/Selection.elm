@@ -95,10 +95,6 @@ isDefinitionSelected definitionId selection =
         |> Maybe.withDefault False
 
 
-
--- TODO move somewhere else
-
-
 modulesForPackages : EverySet PackageId -> Index -> EverySet ModuleId
 modulesForPackages packages index =
     index.packages

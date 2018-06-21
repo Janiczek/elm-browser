@@ -1,6 +1,6 @@
 module View.Column exposing (..)
 
-import EveryDict as EDict
+import EveryDict as EDict exposing (EveryDict)
 import EverySet as ESet
 import Html as H exposing (Html)
 import Html.Attributes as HA
@@ -14,8 +14,8 @@ import View.Icon as Icon
 import View.Row as Row
 
 
-columns : Selection -> Index -> FilterConfig -> Html Msg
-columns selection index filterConfig =
+columns : Selection -> Index -> FilterConfig -> EveryDict DefinitionId SourceCode -> Html Msg
+columns selection index filterConfig changes =
     H.div
         [ HA.class "top-table" ]
         [ H.div
@@ -27,7 +27,7 @@ columns selection index filterConfig =
         , H.div [ HA.class "top-table__content" ]
             [ packagesColumn index selection filterConfig.packages
             , modulesColumn index selection filterConfig.modules
-            , definitionsColumn index selection filterConfig.definitions
+            , definitionsColumn index selection filterConfig.definitions changes
             ]
         ]
 
@@ -206,10 +206,10 @@ modulesColumn index selection modulesFilterConfig =
         |> innerTable
 
 
-definitionsColumn : Index -> Selection -> DefinitionsFilterConfig -> Html Msg
-definitionsColumn index selection definitionsFilterConfig =
+definitionsColumn : Index -> Selection -> DefinitionsFilterConfig -> EveryDict DefinitionId SourceCode -> Html Msg
+definitionsColumn index selection definitionsFilterConfig changes =
     Index.shownDefinitions index selection definitionsFilterConfig
-        |> List.map (\( definitionId, definition ) -> Row.definition selection definitionId definition)
+        |> List.map (\( definitionId, definition ) -> Row.definition selection changes definitionId definition)
         |> innerTable
 
 

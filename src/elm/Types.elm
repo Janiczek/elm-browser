@@ -1,6 +1,7 @@
 module Types exposing (..)
 
 import Editor
+import Elm.Syntax.Range exposing (Location, Range)
 import EveryDict exposing (EveryDict)
 import EverySet exposing (EverySet)
 import Html exposing (Html)
@@ -12,6 +13,7 @@ type Msg
     | LogError String
       -- user actions
     | CreateNewProject
+    | SaveChange DefinitionId SourceCode
       -- selection
     | SelectPackage PackageId
     | SelectModule ModuleId
@@ -32,10 +34,19 @@ type Msg
 type MsgForElectron
     = ErrorLogRequested String
     | ChangeTitle String
+    | ReplaceInFile ReplaceInFileData
 
 
 type MsgForElm
     = ProjectClosed
+
+
+type alias ReplaceInFileData =
+    { filepath : String
+    , from : Location
+    , to : Location
+    , replacement : String
+    }
 
 
 type alias Model =
@@ -50,6 +61,7 @@ type alias Project =
     , index : Maybe Index
     , selection : Selection
     , filterConfig : FilterConfig
+    , changes : EveryDict DefinitionId SourceCode
     }
 
 
@@ -123,6 +135,7 @@ type alias Package =
 
 type alias Module =
     { name : String
+    , path : String
     , isExposed : Bool
     , isEffect : Bool
     , isNative : Bool
@@ -137,6 +150,7 @@ type alias Definition =
     , kind : DefinitionKind
     , isExposed : Bool
     , sourceCode : SourceCode
+    , range : Range
     }
 
 
@@ -146,10 +160,6 @@ type SourceCode
 
 type alias Named a =
     { a | name : String }
-
-
-type alias Authored a =
-    { a | author : String }
 
 
 type alias CommonDefinition a =

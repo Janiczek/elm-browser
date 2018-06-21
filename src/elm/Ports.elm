@@ -1,5 +1,6 @@
 port module Ports exposing (..)
 
+import Elm.Syntax.Range exposing (Location)
 import Json.Encode as JE
 import Types exposing (..)
 
@@ -19,6 +20,25 @@ sendMsgForElectron msg =
 
             ChangeTitle title ->
                 { tag = "ChangeTitle", data = JE.string title }
+
+            ReplaceInFile data ->
+                { tag = "ReplaceInFile"
+                , data =
+                    JE.object
+                        [ ( "filepath", JE.string data.filepath )
+                        , ( "from", encodeLocation data.from )
+                        , ( "to", encodeLocation data.to )
+                        , ( "replacement", JE.string data.replacement )
+                        ]
+                }
+
+
+encodeLocation : Location -> JE.Value
+encodeLocation { row, column } =
+    JE.object
+        [ ( "line", JE.int row )
+        , ( "column", JE.int column )
+        ]
 
 
 getMsgForElm : (MsgForElm -> msg) -> (String -> msg) -> Sub msg

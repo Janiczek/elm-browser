@@ -20,5 +20,9 @@
     "devtron": "^1.4.0",
     "electron": "~1.8.1",
     "elm-test": "^0.18.9"
+  },
+  "dependencies": {
+    "async-file": "^2.0.2",
+    "async-file-reader": "^0.1.1"
   }
 }
