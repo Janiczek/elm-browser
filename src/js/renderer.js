@@ -6,9 +6,11 @@ const Elm = require('../../dist/js/elm.js');
 const mainProcess = remote.require('./main.js');
 
 // do CPU-intensive stuff in another process
-const $replaceInFile = requireTaskPool(require.resolve('./replace-in-file.js'));
-const $copyFromTemplate = requireTaskPool(require.resolve('./copy-from-template.js'));
-const $listFilesForIndex = requireTaskPool(require.resolve('./list-files-for-index.js'));
+const $replaceInFile = requireTaskPool(require.resolve('./bg/replace-in-file.js'));
+const $copyFromTemplate = requireTaskPool(require.resolve('./bg/copy-from-template.js'));
+const $listUserElmFiles = requireTaskPool(require.resolve('./bg/list-user-elm-files.js'));
+const $listFilesForIndex = requireTaskPool(require.resolve('./bg/list-files-for-index.js'));
+const $compileElm = requireTaskPool(require.resolve('./bg/compile-elm.js'));
 
 const app = Elm.Main.fullscreen();
 
@@ -16,24 +18,29 @@ const sendToElm = (tag, data) => {
     app.ports.msgForElm.send({tag, data});
 };
 
-const askForNewProjectPath = () => {
+const createProject = async () => {
     const path = chooseProjectPath();
     $copyFromTemplate(mainProcess.appPath, path);
+    const userElmFiles = await $listUserElmFiles(path);
+    await $compileElm(path, userElmFiles);
     sendToElm('ProjectCreated', path);
 };
 
-const askForOpenProjectPath = () => {
+const openProject = async () => {
     const path = chooseProjectPath();
+    const userElmFiles = await $listUserElmFiles(path);
+    await $compileElm(path, userElmFiles);
     sendToElm('ProjectOpened', path);
 };
 
 const listFilesForIndex = async (path) => {
-    const files = await $listFilesForIndex(path);
-    sendToElm('FilesForIndex', files);
+    const result = await $listFilesForIndex(path);
+    console.log({result});
+    sendToElm('FilesForIndex', result);
 };
 
-ipcRenderer.on('create-project', askForNewProjectPath);
-ipcRenderer.on('open-project', askForOpenProjectPath);
+ipcRenderer.on('create-project', createProject);
+ipcRenderer.on('open-project', openProject);
 
 ipcRenderer.on('close-project', (event, arg) => {
     sendToElm('ProjectClosed', null);
@@ -57,16 +64,16 @@ app.ports.msgForElectron.subscribe(msgForElectron => {
         $replaceInFile(data.filepath, data.from, data.to, data.replacement);
         break;
 
-    case 'AskForNewProjectPath':
-        askForNewProjectPath();
+    case 'CreateProject':
+        createProject();
         break;
 
-    case 'AskForOpenProjectPath':
-        askForOpenProjectPath();
+    case 'OpenProject':
+        openProject();
         break;
 
     case 'ListFilesForIndex':
-        listFilesForIndex();
+        listFilesForIndex(data.path);
         break;
         
     default:

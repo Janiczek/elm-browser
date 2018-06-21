@@ -33,19 +33,19 @@ sendMsgForElectron msg =
                         ]
                 }
 
-            AskForNewProjectPath ->
-                { tag = "AskForNewProjectPath"
+            CreateProject ->
+                { tag = "CreateProject"
                 , data = JE.null
                 }
 
-            AskForOpenProjectPath ->
-                { tag = "AskForOpenProjectPath"
+            OpenProject ->
+                { tag = "OpenProject"
                 , data = JE.null
                 }
 
-            ListFilesForIndex ->
+            ListFilesForIndex projectPath ->
                 { tag = "ListFilesForIndex"
-                , data = JE.null
+                , data = JE.object [ ( "path", JE.string projectPath ) ]
                 }
 
 

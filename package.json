@@ -24,6 +24,8 @@
   "dependencies": {
     "async-file": "^2.0.2",
     "async-file-reader": "^0.1.1",
-    "ncp": "^2.0.0"
+    "ncp": "^2.0.0",
+    "node-elm-compiler": "^4.5.0",
+    "recursive-readdir": "^2.2.2"
   }
 }

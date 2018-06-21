@@ -12,8 +12,8 @@ type Msg
     = MsgForElm MsgForElm
     | LogError String
       -- user actions
-    | CreateNewProject
-    | OpenProject
+    | CreateProjectPressed
+    | OpenProjectPressed
     | SaveChange DefinitionId SourceCode
       -- selection
     | SelectPackage PackageId
@@ -36,9 +36,9 @@ type MsgForElectron
     = ErrorLogRequested String
     | ChangeTitle String
     | ReplaceInFile ReplaceInFileData
-    | AskForNewProjectPath
-    | AskForOpenProjectPath
-    | ListFilesForIndex
+    | CreateProject
+    | OpenProject
+    | ListFilesForIndex String
 
 
 type MsgForElm
@@ -58,6 +58,7 @@ type alias ReplaceInFileData =
 
 type alias Model =
     { project : Maybe Project
+    , isCompiling : Bool
     , footerMsg : Maybe ( Html Msg, String )
     , editor : Editor.Model
     }

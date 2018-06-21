@@ -15,6 +15,7 @@ import Types exposing (..)
 init : ( Model, Cmd Msg )
 init =
     { project = Nothing
+    , isCompiling = False
     , footerMsg = Nothing
     , editor = Editor.init ""
     }
@@ -29,11 +30,11 @@ subscriptions model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        CreateNewProject ->
-            createNewProject model
+        CreateProjectPressed ->
+            createProjectPressed model
 
-        OpenProject ->
-            openProject model
+        OpenProjectPressed ->
+            openProjectPressed model
 
         SaveChange definitionId newSourceCode ->
             saveChange definitionId newSourceCode model
@@ -86,16 +87,16 @@ update msg model =
             deselectDefinition model
 
 
-createNewProject : Model -> ( Model, Cmd Msg )
-createNewProject model =
-    model
-        |> withCmd (Ports.sendMsgForElectron AskForNewProjectPath)
+createProjectPressed : Model -> ( Model, Cmd Msg )
+createProjectPressed model =
+    { model | isCompiling = True }
+        |> withCmd (Ports.sendMsgForElectron CreateProject)
 
 
-openProject : Model -> ( Model, Cmd Msg )
-openProject model =
-    model
-        |> withCmd (Ports.sendMsgForElectron AskForOpenProjectPath)
+openProjectPressed : Model -> ( Model, Cmd Msg )
+openProjectPressed model =
+    { model | isCompiling = True }
+        |> withCmd (Ports.sendMsgForElectron OpenProject)
 
 
 showFooterMsg : ( Html Msg, String ) -> Model -> ( Model, Cmd Msg )
@@ -481,10 +482,11 @@ projectCreated path model =
                 , filterConfig = FilterConfig.empty
                 , changes = EDict.empty
                 }
+        , isCompiling = False
     }
         |> withCmds
             [ Ports.sendMsgForElectron (ChangeTitle (windowTitle (Just path)))
-            , Ports.sendMsgForElectron ListFilesForIndex
+            , Ports.sendMsgForElectron (ListFilesForIndex path)
             ]
 
 
@@ -499,10 +501,11 @@ projectOpened path model =
                 , filterConfig = FilterConfig.empty
                 , changes = EDict.empty
                 }
+        , isCompiling = False
     }
         |> withCmds
             [ Ports.sendMsgForElectron (ChangeTitle (windowTitle (Just path)))
-            , Ports.sendMsgForElectron ListFilesForIndex
+            , Ports.sendMsgForElectron (ListFilesForIndex path)
             ]
 
 

@@ -24,7 +24,10 @@ view model =
 content : Model -> Html Msg
 content model =
     H.div [ HA.class "window-content" ]
-        [ maybeTable model.editor model.project
+        [ if model.isCompiling then
+            empty "Compiling"
+          else
+            maybeTable model.editor model.project
         ]
 
 
@@ -49,12 +52,12 @@ empty message =
             [ HA.class "empty-dialog__message" ]
             [ H.text message ]
         , H.button
-            [ HE.onClick CreateNewProject
+            [ HE.onClick CreateProjectPressed
             , HA.class "btn btn-large btn-default button--create-new-project"
             ]
             [ H.text "Create new project" ]
         , H.button
-            [ HE.onClick OpenProject
+            [ HE.onClick OpenProjectPressed
             , HA.class "btn btn-large btn-default button--open-project"
             ]
             [ H.text "Open a project" ]
