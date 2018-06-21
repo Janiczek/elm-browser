@@ -513,9 +513,9 @@ filesForIndex : List ( String, SourceCode ) -> Model -> ( Model, Cmd Msg )
 filesForIndex files model =
     let
         _ =
-            files
+            List.length files
                 -- TODO mold them into index!
-                |> Debug.log "files"
+                |> Debug.log "[Main.filesForIndex] TODO (number of) files to be indexed"
     in
     model
         |> withNoCmd

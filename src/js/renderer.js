@@ -35,7 +35,6 @@ const openProject = async () => {
 
 const listFilesForIndex = async (path) => {
     const result = await $listFilesForIndex(path);
-    console.log({result});
     sendToElm('FilesForIndex', result);
 };
 

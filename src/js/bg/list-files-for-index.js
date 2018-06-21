@@ -1,3 +1,4 @@
+const fs = require('async-file');
 const readdir = require('recursive-readdir');
 const path = require('path');
 
@@ -11,9 +12,18 @@ const shouldIgnore = (file, stats) => {
   }
 };
 
-const listFilesForIndex = (path) => {
-  // TODO read the files in addition to the paths
-  return readdir(path, [shouldIgnore]);
+const readContent = async (path) => {
+  const content = await fs.readTextFile(path);
+  return [path, content];
+};
+
+const readContents = async (paths) => {
+  return Promise.all(paths.map(readContent));
+};
+
+const listFilesForIndex = async (path) => {
+  const paths = await readdir(path, [shouldIgnore]);
+  return readContents(paths);
 };
 
 module.exports = listFilesForIndex;
