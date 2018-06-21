@@ -114,7 +114,7 @@ packagesHeader { user, directDeps, depsOfDeps } =
 
 
 modulesHeader : ModulesFilterConfig -> Html Msg
-modulesHeader { exposed, effect, native, port_ } =
+modulesHeader { exposed, effect, port_ } =
     H.div
         [ HA.class "top-table__heading" ]
         [ H.span
@@ -125,7 +125,6 @@ modulesHeader { exposed, effect, native, port_ } =
             [ HA.class "top-table__heading__filters btn-group" ]
             [ filterButton ExposedModules exposed
             , filterButton EffectModules effect
-            , filterButton NativeModules native
             , filterButton PortModules port_
             ]
         ]
@@ -153,10 +152,10 @@ packagesColumn index selection packagesFilterConfig =
 
 
 modules : Index -> Selection -> ModulesFilterConfig -> List ( ModuleId, Module )
-modules index selection { exposed, effect, native, port_ } =
+modules index selection { exposed, effect, port_ } =
     let
         showAll =
-            not (exposed || effect || native || port_)
+            not (exposed || effect || port_)
     in
     (case packagesForModulesColumn index selection of
         AllPackages ->
@@ -182,11 +181,6 @@ modules index selection { exposed, effect, native, port_ } =
                         , \{ isEffect } ->
                             if effect then
                                 isEffect
-                            else
-                                True
-                        , \{ isNative } ->
-                            if native then
-                                isNative
                             else
                                 True
                         , \{ isPort } ->

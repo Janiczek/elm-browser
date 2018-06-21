@@ -1,4 +1,4 @@
-module View.Footer exposing (footer, filterTooltip)
+module View.Footer exposing (filterTooltip, footer)
 
 import Html as H exposing (Html)
 import Html.Attributes as HA
@@ -28,9 +28,9 @@ footerMessage model =
                     |> Maybe.map (\_ -> ok)
                     |> Maybe.withDefault [ spinner, H.text "Indexing your project" ]
     in
-        model.footerMsg
-            |> Maybe.map (\( icon, msg ) -> [ icon, H.text msg ])
-            |> Maybe.withDefault defaultFooterMsg
+    model.footerMsg
+        |> Maybe.map (\( icon, msg ) -> [ icon, H.text msg ])
+        |> Maybe.withDefault defaultFooterMsg
 
 
 spinner : Html Msg
@@ -60,9 +60,6 @@ filterTooltip filterType =
 
         EffectModules ->
             "Effect modules"
-
-        NativeModules ->
-            "Native modules"
 
         PortModules ->
             "Port modules"

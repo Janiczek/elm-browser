@@ -15,11 +15,6 @@ notExposedIcon condition =
     iconFa "eye-slash" condition "Not exposed"
 
 
-nativeIcon : Bool -> Html Msg
-nativeIcon condition =
-    iconMfizz "javascript-alt" condition "Native (JS)"
-
-
 effectIcon : Bool -> Html Msg
 effectIcon condition =
     iconFa "rocket" condition "Effect manager"
@@ -42,9 +37,6 @@ filterIcon filterType =
 
         EffectModules ->
             "icon--fa fa-rocket"
-
-        NativeModules ->
-            "icon--mfizz icon-javascript-alt"
 
         PortModules ->
             "icon--fa fa-comments"

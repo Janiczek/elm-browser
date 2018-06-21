@@ -50,7 +50,7 @@ definition selection changes definitionId definition =
 
 
 packageRow : Package -> Html Msg
-packageRow { name, version, dependencyType, containsNativeModules, containsEffectModules } =
+packageRow { name, version, dependencyType } =
     H.div
         [ HA.class "identifier" ]
         [ H.span
@@ -63,18 +63,14 @@ packageRow { name, version, dependencyType, containsNativeModules, containsEffec
             [ H.text name ]
         , H.span
             [ HA.class "identifier__metadata" ]
-            ([ nativeIcon containsNativeModules
-             , effectIcon containsEffectModules
-             ]
-                ++ (version
-                        |> Maybe.map
-                            (\v ->
-                                [ divider "@"
-                                , H.text v
-                                ]
-                            )
-                        |> Maybe.withDefault []
-                   )
+            (version
+                |> Maybe.map
+                    (\v ->
+                        [ divider "@"
+                        , H.text v
+                        ]
+                    )
+                |> Maybe.withDefault []
             )
         ]
 
@@ -87,7 +83,7 @@ divider str =
 
 
 moduleRow : Module -> Html Msg
-moduleRow { name, isExposed, isNative, isEffect, isPort } =
+moduleRow { name, isExposed, isEffect, isPort } =
     H.div
         [ HA.class "identifier" ]
         [ H.span
@@ -96,7 +92,6 @@ moduleRow { name, isExposed, isNative, isEffect, isPort } =
         , H.span
             [ HA.class "identifier__metadata" ]
             [ notExposedIcon (not isExposed)
-            , nativeIcon isNative
             , effectIcon isEffect
             , portModuleIcon isPort
             ]

@@ -150,11 +150,6 @@ setFilter filterType isActive model =
                                     |> asModulesFilterConfigIn project.filterConfig
                                     |> asFilterConfigIn project
 
-                            NativeModules ->
-                                { modules | native = isActive }
-                                    |> asModulesFilterConfigIn project.filterConfig
-                                    |> asFilterConfigIn project
-
                             PortModules ->
                                 { modules | port_ = isActive }
                                     |> asModulesFilterConfigIn project.filterConfig

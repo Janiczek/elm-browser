@@ -86,14 +86,12 @@ type FilterType
       -- modules
     | ExposedModules
     | EffectModules
-    | NativeModules
     | PortModules
       -- definitions
     | ExposedDefinitions
 
 
 type alias PackagesFilterConfig =
-    -- TODO maybe effect and native-containing packages? "dangerous?"
     { user : Bool
     , directDeps : Bool
     , depsOfDeps : Bool
@@ -103,7 +101,6 @@ type alias PackagesFilterConfig =
 type alias ModulesFilterConfig =
     { exposed : Bool
     , effect : Bool
-    , native : Bool
     , port_ : Bool
     }
 
@@ -133,8 +130,6 @@ type alias Package =
     { name : String
     , version : Maybe String
     , dependencyType : DependencyType
-    , containsEffectModules : Bool
-    , containsNativeModules : Bool
     , modules : EverySet ModuleId
     }
 
@@ -144,7 +139,6 @@ type alias Module =
     , path : String
     , isExposed : Bool
     , isEffect : Bool
-    , isNative : Bool
     , isPort : Bool
     , definitions : EverySet DefinitionId
     , language : Language

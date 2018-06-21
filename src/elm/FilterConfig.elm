@@ -13,7 +13,6 @@ empty =
     , modules =
         { exposed = False
         , effect = False
-        , native = False
         , port_ = False
         }
     , definitions =
