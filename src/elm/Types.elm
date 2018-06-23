@@ -130,7 +130,7 @@ type alias Index =
 
 type alias Package =
     { name : String
-    , version : Maybe String
+    , version : String
     , dependencyType : DependencyType
     , modules : EverySet ModuleId
     }

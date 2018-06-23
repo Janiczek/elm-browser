@@ -63,15 +63,9 @@ packageRow { name, version, dependencyType } =
             [ H.text name ]
         , H.span
             [ HA.class "identifier__metadata" ]
-            (version
-                |> Maybe.map
-                    (\v ->
-                        [ divider "@"
-                        , H.text v
-                        ]
-                    )
-                |> Maybe.withDefault []
-            )
+            [ divider "@"
+            , H.text version
+            ]
         ]
 
 
