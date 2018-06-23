@@ -20,23 +20,6 @@ definition =
         (JD.field "range" Range.decode)
 
 
-language : Decoder Language
-language =
-    JD.string
-        |> JD.andThen
-            (\string ->
-                case string of
-                    "javascript" ->
-                        JD.succeed JavaScript
-
-                    "elm" ->
-                        JD.succeed Elm
-
-                    _ ->
-                        JD.fail "Unknown language"
-            )
-
-
 definitionKind : Decoder DefinitionKind
 definitionKind =
     JD.field "kind" JD.string
@@ -111,12 +94,6 @@ sourceCode selection index filterConfig changes =
         )
         definitionId
         moduleIdAndDefinition
-
-
-selectedLanguage : Selection -> Index -> Maybe Language
-selectedLanguage selection index =
-    moduleForSelectedDefinition selection index
-        |> Maybe.map .language
 
 
 moduleForSelectedDefinition : Selection -> Index -> Maybe Module

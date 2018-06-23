@@ -143,7 +143,6 @@ type alias Module =
     , isEffect : Bool
     , isPort : Bool
     , definitions : EverySet DefinitionId
-    , language : Language
     }
 
 
@@ -172,11 +171,6 @@ type DependencyType
     = UserPackage
     | DirectDependency
     | DependencyOfDependency
-
-
-type Language
-    = Elm
-    | JavaScript
 
 
 type PackageId
