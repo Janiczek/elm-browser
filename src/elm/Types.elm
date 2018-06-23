@@ -45,7 +45,7 @@ type MsgForElm
     = ProjectClosed
     | ProjectCreated String
     | ProjectOpened String
-    | FilesForIndex (List ( String, SourceCode ))
+    | FilesForIndex (List ( String, String ))
 
 
 type alias ReplaceInFileData =

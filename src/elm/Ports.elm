@@ -94,10 +94,10 @@ getMsgForElm tagger onError =
         )
 
 
-filesForIndexDecoder : Decoder (List ( String, SourceCode ))
+filesForIndexDecoder : Decoder (List ( String, String ))
 filesForIndexDecoder =
     JD.list
         (JD.map2 (,)
             (JD.index 0 JD.string)
-            (JD.index 1 (JD.string |> JD.map SourceCode))
+            (JD.index 1 JD.string)
         )

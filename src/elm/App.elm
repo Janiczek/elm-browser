@@ -7,6 +7,7 @@ import EveryDict as EDict exposing (EveryDict)
 import FilterConfig
 import Html exposing (Html)
 import Index
+import Normalize
 import Ports
 import Selection
 import Types exposing (..)
@@ -509,15 +510,17 @@ projectOpened path model =
             ]
 
 
-filesForIndex : List ( String, SourceCode ) -> Model -> ( Model, Cmd Msg )
+filesForIndex : List ( String, String ) -> Model -> ( Model, Cmd Msg )
 filesForIndex files model =
-    let
-        _ =
-            List.length files
-                -- TODO mold them into index!
-                |> Debug.log "[Main.filesForIndex] TODO (number of) files to be indexed"
-    in
-    model
+    model.project
+        |> Maybe.map
+            (\project ->
+                files
+                    |> Normalize.toIndex project.rootPath
+                    |> asIndexIn model.project
+                    |> asProjectIn model
+            )
+        |> Maybe.withDefault model
         |> withNoCmd
 
 
