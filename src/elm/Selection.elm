@@ -115,6 +115,12 @@ moduleId { name } =
     ModuleId name
 
 
-definitionId : String -> CommonDefinition a -> DefinitionId
-definitionId moduleName { name } =
-    DefinitionId (moduleName ++ "." ++ name)
+definitionId : String -> String -> DefinitionId
+definitionId moduleName definition =
+    definitionQualifiedName moduleName definition
+        |> DefinitionId
+
+
+definitionQualifiedName : String -> String -> String
+definitionQualifiedName moduleName name =
+    moduleName ++ "." ++ name

@@ -148,6 +148,7 @@ type alias Module =
 
 type alias Definition =
     { name : String
+    , qualifiedName : String
     , kind : DefinitionKind
     , isExposed : Bool
     , sourceCode : SourceCode
@@ -186,10 +187,9 @@ type DefinitionId
 
 
 type DefinitionKind
-    = Constant { type_ : String }
-    | Function { type_ : String }
+    = Constant
+    | Function
     | Type
-    | TypeConstructor { type_ : String }
     | TypeAlias
 
 
@@ -197,7 +197,3 @@ type alias PortData =
     { tag : String
     , data : JE.Value
     }
-
-
-
--- TODO fixities somewhere?

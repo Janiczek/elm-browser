@@ -517,6 +517,7 @@ filesForIndex files model =
             (\project ->
                 files
                     |> Normalize.toIndex project.rootPath
+                    |> Just
                     |> asIndexIn model.project
                     |> asProjectIn model
             )

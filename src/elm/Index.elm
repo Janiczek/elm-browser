@@ -1,77 +1,11 @@
 module Index exposing (..)
 
-import Elm.Syntax.Range as Range
 import EveryDict as EDict exposing (EveryDict)
 import EverySet as ESet exposing (EverySet)
-import Json.Decode as JD exposing (Decoder)
 import Maybe.Extra as Maybe
 import Selection
 import Types exposing (..)
 import Utils
-
-
-definition : Decoder Definition
-definition =
-    JD.map5 Definition
-        (JD.field "name" JD.string)
-        definitionKind
-        (JD.field "isExposed" JD.bool)
-        (JD.field "sourceCode" (JD.string |> JD.map SourceCode))
-        (JD.field "range" Range.decode)
-
-
-definitionKind : Decoder DefinitionKind
-definitionKind =
-    JD.field "kind" JD.string
-        |> JD.andThen
-            (\kind ->
-                case kind of
-                    "constant" ->
-                        constant
-
-                    "function" ->
-                        function
-
-                    "type" ->
-                        type_
-
-                    "typeConstructor" ->
-                        typeConstructor
-
-                    "typeAlias" ->
-                        typeAlias
-
-                    _ ->
-                        JD.fail "Unknown definition kind!"
-            )
-
-
-constant : Decoder DefinitionKind
-constant =
-    JD.field "type" JD.string
-        |> JD.map (\type_ -> Constant { type_ = type_ })
-
-
-function : Decoder DefinitionKind
-function =
-    JD.field "type" JD.string
-        |> JD.map (\type_ -> Function { type_ = type_ })
-
-
-type_ : Decoder DefinitionKind
-type_ =
-    JD.succeed Type
-
-
-typeConstructor : Decoder DefinitionKind
-typeConstructor =
-    JD.field "type" JD.string
-        |> JD.map (\type_ -> TypeConstructor { type_ = type_ })
-
-
-typeAlias : Decoder DefinitionKind
-typeAlias =
-    JD.succeed TypeAlias
 
 
 sourceCode : Selection -> Index -> FilterConfig -> EveryDict DefinitionId SourceCode -> Maybe SourceCode
