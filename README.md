@@ -9,16 +9,3 @@ Elm project browser and editor inspired by Smalltalk's System Browser.
 ```
 yarn && yarn start
 ```
-
-## Debugging
-
-```
-yarn debug
-```
-
-(Changes `Html.program` to `TimeTravel.Html.program`. We use `jinjor/time-travel` because Elm's built-in debugger doesn't work well with Electron.)
-
-
-## TODO
-
-<img alt="TODO" src="https://github.com/Janiczek/elm-browser/raw/master/resources/readme/todo.png">
