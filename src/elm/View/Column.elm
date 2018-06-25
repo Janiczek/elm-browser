@@ -9,20 +9,19 @@ import Index
 import Selection
 import Types exposing (..)
 import Utils
-import View.Footer as Footer
 import View.Icon as Icon
 import View.Row as Row
 
 
-columns : Selection -> Index -> FilterConfig -> EveryDict DefinitionId SourceCode -> Html Msg
-columns selection index filterConfig changes =
+columns : ColumnTitles -> Selection -> Index -> FilterConfig -> EveryDict DefinitionId SourceCode -> Html Msg
+columns columnTitles selection index filterConfig changes =
     H.div
         [ HA.class "top-table" ]
         [ H.div
             [ HA.class "top-table__headings" ]
-            [ packagesHeader filterConfig.packages
-            , modulesHeader filterConfig.modules
-            , definitionsHeader filterConfig.definitions
+            [ packagesHeader columnTitles.packages filterConfig.packages
+            , modulesHeader columnTitles.modules filterConfig.modules
+            , definitionsHeader columnTitles.definitions filterConfig.definitions
             ]
         , H.div [ HA.class "top-table__content" ]
             [ packagesColumn index selection filterConfig.packages
@@ -37,6 +36,54 @@ filterButton filterType isActive =
     let
         filterIcon =
             Icon.filterIcon filterType
+
+        column : Column
+        column =
+            case filterType of
+                UserPackages ->
+                    Packages
+
+                DirectDeps ->
+                    Packages
+
+                DepsOfDeps ->
+                    Packages
+
+                ExposedModules ->
+                    Modules
+
+                EffectModules ->
+                    Modules
+
+                PortModules ->
+                    Modules
+
+                ExposedDefinitions ->
+                    Definitions
+
+        filterTooltip : String
+        filterTooltip =
+            case filterType of
+                UserPackages ->
+                    "User packages"
+
+                DirectDeps ->
+                    "Direct deps"
+
+                DepsOfDeps ->
+                    "Deps of deps"
+
+                ExposedModules ->
+                    "Exposed modules"
+
+                EffectModules ->
+                    "Effect modules"
+
+                PortModules ->
+                    "Port modules"
+
+                ExposedDefinitions ->
+                    "Exposed"
     in
     H.button
         [ HA.classList
@@ -46,13 +93,8 @@ filterButton filterType isActive =
             , ( "btn-default", True )
             , ( "active", isActive )
             ]
-        , HE.onMouseEnter
-            (ShowFooterMsg
-                ( H.span [ HA.class <| "footer__icon icon " ++ filterIcon ] []
-                , Footer.filterTooltip filterType
-                )
-            )
-        , HE.onMouseLeave HideFooterMsg
+        , HE.onMouseEnter (ShowColumnTitle column filterTooltip)
+        , HE.onMouseLeave (HideColumnTitle column)
         , HE.onClick (SetFilter filterType (not isActive))
         ]
         [ H.span [ HA.class <| "icon " ++ filterIcon ] [] ]
@@ -96,13 +138,15 @@ packages index { user, directDeps, depsOfDeps } =
             )
 
 
-packagesHeader : PackagesFilterConfig -> Html Msg
-packagesHeader { user, directDeps, depsOfDeps } =
+packagesHeader : Maybe String -> PackagesFilterConfig -> Html Msg
+packagesHeader maybeTitle { user, directDeps, depsOfDeps } =
     H.div
         [ HA.class "top-table__heading" ]
         [ H.span
             [ HA.class "top-table__heading__label" ]
-            [ H.text "Packages"
+            [ maybeTitle
+                |> Maybe.withDefault "Packages"
+                |> H.text
             ]
         , H.div
             [ HA.class "top-table__heading__filters btn-group" ]
@@ -113,13 +157,15 @@ packagesHeader { user, directDeps, depsOfDeps } =
         ]
 
 
-modulesHeader : ModulesFilterConfig -> Html Msg
-modulesHeader { exposed, effect, port_ } =
+modulesHeader : Maybe String -> ModulesFilterConfig -> Html Msg
+modulesHeader maybeTitle { exposed, effect, port_ } =
     H.div
         [ HA.class "top-table__heading" ]
         [ H.span
             [ HA.class "top-table__heading__label" ]
-            [ H.text "Modules"
+            [ maybeTitle
+                |> Maybe.withDefault "Modules"
+                |> H.text
             ]
         , H.div
             [ HA.class "top-table__heading__filters btn-group" ]
@@ -130,13 +176,15 @@ modulesHeader { exposed, effect, port_ } =
         ]
 
 
-definitionsHeader : DefinitionsFilterConfig -> Html Msg
-definitionsHeader { exposed } =
+definitionsHeader : Maybe String -> DefinitionsFilterConfig -> Html Msg
+definitionsHeader maybeTitle { exposed } =
     H.div
         [ HA.class "top-table__heading" ]
         [ H.span
             [ HA.class "top-table__heading__label" ]
-            [ H.text "Definitions"
+            [ maybeTitle
+                |> Maybe.withDefault "Definitions"
+                |> H.text
             ]
         , H.div
             [ HA.class "top-table__heading__filters btn-group" ]

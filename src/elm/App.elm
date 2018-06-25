@@ -18,6 +18,11 @@ init =
     { project = Nothing
     , isCompiling = False
     , footerMsg = Nothing
+    , columnTitles =
+        { packages = Nothing
+        , modules = Nothing
+        , definitions = Nothing
+        }
     , editor = Editor.init ""
     }
         |> withNoCmd
@@ -48,6 +53,12 @@ update msg model =
 
         HideFooterMsg ->
             hideFooterMsg model
+
+        ShowColumnTitle column title ->
+            showColumnTitle column title model
+
+        HideColumnTitle column ->
+            hideColumnTitle column model
 
         MsgForElm msgForElm ->
             case msgForElm of
@@ -109,6 +120,40 @@ showFooterMsg footerMsg model =
 hideFooterMsg : Model -> ( Model, Cmd Msg )
 hideFooterMsg model =
     { model | footerMsg = Nothing }
+        |> withNoCmd
+
+
+showColumnTitle : Column -> String -> Model -> ( Model, Cmd Msg )
+showColumnTitle column title ({ columnTitles } as model) =
+    { model
+        | columnTitles =
+            case column of
+                Packages ->
+                    { columnTitles | packages = Just title }
+
+                Modules ->
+                    { columnTitles | modules = Just title }
+
+                Definitions ->
+                    { columnTitles | definitions = Just title }
+    }
+        |> withNoCmd
+
+
+hideColumnTitle : Column -> Model -> ( Model, Cmd Msg )
+hideColumnTitle column ({ columnTitles } as model) =
+    { model
+        | columnTitles =
+            case column of
+                Packages ->
+                    { columnTitles | packages = Nothing }
+
+                Modules ->
+                    { columnTitles | modules = Nothing }
+
+                Definitions ->
+                    { columnTitles | definitions = Nothing }
+    }
         |> withNoCmd
 
 

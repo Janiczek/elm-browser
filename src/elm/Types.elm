@@ -28,6 +28,8 @@ type Msg
       -- app actions
     | ShowFooterMsg ( Html Msg, String )
     | HideFooterMsg
+    | ShowColumnTitle Column String
+    | HideColumnTitle Column
       -- components
     | EditorMsg Editor.Msg
 
@@ -60,7 +62,15 @@ type alias Model =
     { project : Maybe Project
     , isCompiling : Bool
     , footerMsg : Maybe ( Html Msg, String )
+    , columnTitles : ColumnTitles
     , editor : Editor.Model
+    }
+
+
+type alias ColumnTitles =
+    { packages : Maybe String
+    , modules : Maybe String
+    , definitions : Maybe String
     }
 
 
@@ -78,6 +88,12 @@ type alias FilterConfig =
     , modules : ModulesFilterConfig
     , definitions : DefinitionsFilterConfig
     }
+
+
+type Column
+    = Packages
+    | Modules
+    | Definitions
 
 
 type FilterType

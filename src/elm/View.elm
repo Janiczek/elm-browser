@@ -27,14 +27,14 @@ content model =
         [ if model.isCompiling then
             empty "Compiling"
           else
-            maybeTable model.editor model.project
+            maybeTable model.columnTitles model.editor model.project
         ]
 
 
-maybeTable : Editor.Model -> Maybe Project -> Html Msg
-maybeTable editor maybeProject =
+maybeTable : ColumnTitles -> Editor.Model -> Maybe Project -> Html Msg
+maybeTable columnTitles editor maybeProject =
     maybeProject
-        |> Maybe.map (project editor)
+        |> Maybe.map (project columnTitles editor)
         |> Maybe.withDefault noProject
 
 
@@ -69,23 +69,24 @@ noProject =
     empty "No project open"
 
 
-project : Editor.Model -> Project -> Html Msg
-project editor project =
+project : ColumnTitles -> Editor.Model -> Project -> Html Msg
+project columnTitles editor project =
     project.index
-        |> Maybe.map (\index -> projectWithContent editor project.selection index project.filterConfig project.changes)
-        |> Maybe.withDefault (projectWithContent editor NothingSelected Index.empty FilterConfig.empty EDict.empty)
+        |> Maybe.map (\index -> projectWithContent columnTitles editor project.selection index project.filterConfig project.changes)
+        |> Maybe.withDefault (projectWithContent columnTitles editor NothingSelected Index.empty FilterConfig.empty EDict.empty)
 
 
 projectWithContent :
-    Editor.Model
+    ColumnTitles
+    -> Editor.Model
     -> Selection
     -> Index
     -> FilterConfig
     -> EveryDict DefinitionId SourceCode
     -> Html Msg
-projectWithContent editor selection index filterConfig changes =
+projectWithContent columnTitles editor selection index filterConfig changes =
     H.div
         [ HA.class "main-table" ]
-        [ columns selection index filterConfig changes
+        [ columns columnTitles selection index filterConfig changes
         , sourceCode editor selection changes
         ]
