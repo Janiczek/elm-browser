@@ -19,18 +19,22 @@ const sendToElm = (tag, data) => {
 };
 
 const createProject = async () => {
-    const path = chooseProjectPath();
-    $copyFromTemplate(mainProcess.appPath, path);
-    const userElmFiles = await $listUserElmFiles(path);
-    await $compileElm(path, userElmFiles);
-    sendToElm('ProjectCreated', path);
+    try {
+      const path = await chooseProjectPath();
+      $copyFromTemplate(mainProcess.appPath, path);
+      const userElmFiles = await $listUserElmFiles(path);
+      await $compileElm(path, userElmFiles);
+      sendToElm('ProjectCreated', path);
+    } catch (e) {}
 };
 
 const openProject = async () => {
-    const path = chooseProjectPath();
-    const userElmFiles = await $listUserElmFiles(path);
-    await $compileElm(path, userElmFiles);
-    sendToElm('ProjectOpened', path);
+    try {
+      const path = await chooseProjectPath();
+      const userElmFiles = await $listUserElmFiles(path);
+      await $compileElm(path, userElmFiles);
+      sendToElm('ProjectOpened', path);
+    } catch (e) {}
 };
 
 const listFilesForIndex = async (path) => {
@@ -94,6 +98,8 @@ const changeTitle = newTitle => {
 const chooseProjectPath = () => {
     const paths = mainProcess.selectDirectory();
     if (paths !== undefined && paths.length > 0) {
-      return paths[0];
+      return Promise.resolve(paths[0]);
+    } else {
+      return Promise.reject('User has cancelled the directory selection dialog');
     }
 };
