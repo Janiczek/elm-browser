@@ -18,3 +18,7 @@ yarn && yarn build && yarn start
 - [ ] secondary highlight for packages: highlight those packages that depend on the currently selected one
 - [ ] secondary highlight for modules: highlight the package it's originating from
 - [ ] fourth column - groups based on the documentation?
+- [ ] listen on the filesystem changes and index the changed files if we indexed them before
+- [ ] bug: the ranges for functions are without doc comments? something's fishy (distinct-colors, DistinctColors.HCL.colors, edit and save, diff - the comment is there twice)
+- [ ] bug: type constructors in definitions, not just the type name
+- [ ] bug: visibility of types (and maybe more stuff) is wrong
