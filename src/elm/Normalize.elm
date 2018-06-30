@@ -200,8 +200,8 @@ isElmModule path =
 
 isTestPath : String -> Bool
 isTestPath path =
-    path
-        |> String.contains "/tests/"
+    (path |> String.contains "/tests/")
+        || (path |> String.contains "/test/")
 
 
 isDependencyPath : String -> Bool

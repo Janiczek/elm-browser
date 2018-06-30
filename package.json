@@ -4,6 +4,7 @@
   "description": "Smalltalk-like System Browser for Elm projects",
   "main": "src/js/main.js",
   "scripts": {
+    "build": "elm make --yes --warn src/elm/Main.elm --output=dist/js/elm.js",
     "start": "electron ."
   },
   "repository": "https://github.com/janiczek/elm-browser",
@@ -19,7 +20,8 @@
   "devDependencies": {
     "devtron": "^1.4.0",
     "electron": "~1.8.1",
-    "electron-remote": "^1.3.0"
+    "electron-remote": "^1.3.0",
+    "elm": "^0.18.0"
   },
   "dependencies": {
     "async-file": "^2.0.2",
