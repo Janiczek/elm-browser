@@ -1,6 +1,5 @@
 const electron = require('electron');
 const {remote, ipcRenderer} = electron;
-const {requireTaskPool} = require('electron-remote');
 const {Elm} = require('../dist/js/elm.js');
 
 const mainProcess = remote.require('./main.js');
