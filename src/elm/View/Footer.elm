@@ -22,6 +22,7 @@ footerMessage model =
         defaultFooterMsg =
             if model.project == Nothing then
                 ok
+
             else
                 model.project
                     |> Maybe.andThen .index

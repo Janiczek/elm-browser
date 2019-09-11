@@ -1,15 +1,16 @@
 module Normalize exposing (toIndex)
 
+import AssocList as Dict exposing (Dict)
+import AssocSet as Set exposing (Set)
 import Elm.Parser
 import Elm.Processing
 import Elm.Syntax.Declaration exposing (Declaration(..))
 import Elm.Syntax.Exposing exposing (Exposing(..))
 import Elm.Syntax.File exposing (File)
 import Elm.Syntax.Module
-import Elm.Syntax.Ranged exposing (Ranged)
+import Elm.Syntax.Node
+import Elm.Syntax.Range exposing (Range)
 import Elm.Writer
-import EveryDict as EDict exposing (EveryDict)
-import EverySet as ESet exposing (EverySet)
 import Json.Decode as JD exposing (Decoder)
 import Regex exposing (Regex)
 import Selection
@@ -73,23 +74,23 @@ toIndex rootPath files =
         definitions =
             toDefinitions (elmFiles |> List.map (\( _, _, file ) -> file))
 
-        packagesDict : EveryDict PackageId Package
+        packagesDict : Dict PackageId Package
         packagesDict =
             packages
                 |> List.map (\package -> ( PackageId package.name, package ))
-                |> EDict.fromList
+                |> Dict.fromList
 
-        modulesDict : EveryDict ModuleId Module
+        modulesDict : Dict ModuleId Module
         modulesDict =
             modules
                 |> List.map (\module_ -> ( ModuleId module_.name, module_ ))
-                |> EDict.fromList
+                |> Dict.fromList
 
-        definitionsDict : EveryDict DefinitionId Definition
+        definitionsDict : Dict DefinitionId Definition
         definitionsDict =
             definitions
                 |> List.map (\definition -> ( DefinitionId definition.qualifiedName, definition ))
-                |> EDict.fromList
+                |> Dict.fromList
     in
     { packages = packagesDict
     , modules = modulesDict
@@ -104,12 +105,14 @@ toPackage mainPackage { data, isMain, elmFiles } =
     , modules =
         elmFiles
             |> List.map (Tuple.second >> sourceCodeToModuleName >> ModuleId)
-            |> ESet.fromList
+            |> Set.fromList
     , dependencyType =
         if isMain then
             UserPackage
+
         else if mainPackage.data.dependencies |> List.member data.name then
             DirectDependency
+
         else
             DependencyOfDependency
     }
@@ -140,24 +143,29 @@ dependenciesDecoder =
 
 repositoryNameRegex : Regex
 repositoryNameRegex =
-    Regex.regex "([^/]+/[^/]+)\\.git$"
+    Regex.fromString "([^/]+/[^/]+)\\.git$"
+        -- We've checked this is a valid regex and won't return Nothing
+        |> Maybe.withDefault Regex.never
 
 
 moduleNameRegex : Regex
 moduleNameRegex =
-    Regex.regex "module ([^ ]+)"
+    Regex.fromString "module ([^ ]+)"
+        -- We've checked this is a valid regex and won't return Nothing
+        |> Maybe.withDefault Regex.never
 
 
 {-|
 
     "https://github.com/author/project.git" --> JD.succeed "author/project"
+
     "something that doesn't have foo/bar.git at the end" --> JD.fail "..."
 
 -}
 repositoryToName : String -> Decoder String
 repositoryToName repository =
     repository
-        |> Regex.find (Regex.AtMost 1) repositoryNameRegex
+        |> Regex.findAtMost 1 repositoryNameRegex
         |> firstSubmatch
         |> Maybe.map JD.succeed
         |> Maybe.withDefault (JD.fail "Couldn't decode the package author and name from the \"repository\" field in elm-package.json")
@@ -171,7 +179,7 @@ sourceCodeToModuleName sourceCode =
         |> Maybe.andThen
             (\firstLine ->
                 firstLine
-                    |> Regex.find (Regex.AtMost 1) moduleNameRegex
+                    |> Regex.findAtMost 1 moduleNameRegex
                     |> firstSubmatch
             )
         |> Maybe.withDefault "Error getting module name from the source code"
@@ -231,14 +239,15 @@ toRawPackages rootPath files =
                             , elmFiles =
                                 files
                                     |> List.filter
-                                        (\( path, _ ) ->
+                                        (\( path_, _ ) ->
                                             (if isMain then
-                                                not (isDependencyPath path)
+                                                not (isDependencyPath path_)
+
                                              else
-                                                path |> String.contains data.name
+                                                path_ |> String.contains data.name
                                             )
-                                                && not (isTestPath path)
-                                                && isElmModule path
+                                                && not (isTestPath path_)
+                                                && isElmModule path_
                                         )
                             }
                         )
@@ -272,8 +281,8 @@ toModules packages files =
                     package =
                         packages
                             |> List.filter
-                                (\package ->
-                                    package.elmFiles
+                                (\package_ ->
+                                    package_.elmFiles
                                         |> List.map Tuple.first
                                         |> List.member path
                                 )
@@ -295,35 +304,43 @@ toModules packages files =
             )
 
 
-findDefinitionNames : String -> File -> EverySet DefinitionId
+findDefinitionNames : String -> File -> Set DefinitionId
 findDefinitionNames moduleName file =
-    file
-        |> .declarations
-        |> List.filterMap declarationName
+    file.declarations
+        |> List.filterMap (Elm.Syntax.Node.value >> declarationName)
         |> List.map (Selection.definitionId moduleName)
-        |> ESet.fromList
+        |> Set.fromList
 
 
-declarationName : Ranged Declaration -> Maybe String
-declarationName rangedDeclaration =
-    case Elm.Syntax.Ranged.value rangedDeclaration of
-        FuncDecl func ->
-            if func.declaration.operatorDefinition then
-                Just <| "(" ++ func.declaration.name.value ++ ")"
-            else
-                Just func.declaration.name.value
+declarationName : Declaration -> Maybe String
+declarationName declaration =
+    case declaration of
+        FunctionDeclaration func ->
+            func.declaration
+                |> Elm.Syntax.Node.value
+                |> .name
+                |> Elm.Syntax.Node.value
+                |> Just
 
-        AliasDecl typeAlias ->
-            Just typeAlias.name
+        AliasDeclaration typeAlias ->
+            typeAlias.name
+                |> Elm.Syntax.Node.value
+                |> Just
 
-        TypeDecl typeDecl ->
-            Just typeDecl.name
+        CustomTypeDeclaration typeDecl ->
+            typeDecl.name
+                |> Elm.Syntax.Node.value
+                |> Just
 
         PortDeclaration portDecl ->
-            Just portDecl.name.value
+            portDecl.name
+                |> Elm.Syntax.Node.value
+                |> Just
 
         InfixDeclaration infix ->
-            Just infix.operator
+            infix.operator
+                |> Elm.Syntax.Node.value
+                |> Just
 
         Destructuring pattern expression ->
             -- what the heck even is this
@@ -339,37 +356,51 @@ toDefinitions files =
                     |> List.map (\declaration -> ( file, declaration ))
             )
         |> List.filterMap
-            (\( file, ( range, declaration ) as rangedDeclaration ) ->
+            (\( file, rangedDeclaration ) ->
                 let
+                    range : Range
+                    range =
+                        Elm.Syntax.Node.range rangedDeclaration
+
+                    declaration : Declaration
+                    declaration =
+                        Elm.Syntax.Node.value rangedDeclaration
+
                     name : Maybe String
                     name =
-                        declarationName rangedDeclaration
+                        declarationName declaration
 
-                    moduleName : Maybe String
+                    moduleName : String
                     moduleName =
                         file.moduleDefinition
+                            |> Elm.Syntax.Node.value
                             |> Elm.Syntax.Module.moduleName
-                            |> Maybe.map (String.join ".")
+                            |> String.join "."
 
                     qualifiedName : Maybe String
                     qualifiedName =
-                        Maybe.map2 Selection.definitionQualifiedName
-                            moduleName
-                            name
+                        name
+                            |> Maybe.map (Selection.definitionQualifiedName moduleName)
 
                     kind : Maybe DefinitionKind
                     kind =
                         case declaration of
-                            FuncDecl func ->
-                                if List.isEmpty func.declaration.arguments then
+                            FunctionDeclaration func ->
+                                let
+                                    decl =
+                                        func.declaration
+                                            |> Elm.Syntax.Node.value
+                                in
+                                if List.isEmpty decl.arguments then
                                     Just Constant
+
                                 else
                                     Just Function
 
-                            AliasDecl typeAlias ->
+                            AliasDeclaration typeAlias ->
                                 Just TypeAlias
 
-                            TypeDecl typeDecl ->
+                            CustomTypeDeclaration typeDecl ->
                                 Just Type
 
                             PortDeclaration portDecl ->
@@ -395,10 +426,10 @@ toDefinitions files =
                             |> SourceCode
                 in
                 Maybe.map3
-                    (\name qualifiedName kind ->
-                        { name = name
-                        , qualifiedName = qualifiedName
-                        , kind = kind
+                    (\name_ qualifiedName_ kind_ ->
+                        { name = name_
+                        , qualifiedName = qualifiedName_
+                        , kind = kind_
                         , isExposed = isExposed
                         , sourceCode = sourceCode
                         , range = range
@@ -413,16 +444,6 @@ toDefinitions files =
 moduleExposesFunction : File -> String -> Bool
 moduleExposesFunction file name =
     file.moduleDefinition
+        |> Elm.Syntax.Node.value
         |> Elm.Syntax.Module.exposingList
-        |> exposingMap Elm.Syntax.Ranged.value
         |> Elm.Syntax.Exposing.exposesFunction name
-
-
-exposingMap : (a -> b) -> Exposing a -> Exposing b
-exposingMap fn exp =
-    case exp of
-        All range ->
-            All range
-
-        Explicit list ->
-            Explicit (List.map fn list)

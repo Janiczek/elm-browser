@@ -1,7 +1,7 @@
 module View.Column exposing (..)
 
-import EveryDict as EDict exposing (EveryDict)
-import EverySet as ESet
+import AssocList as Dict exposing (Dict)
+import AssocSet as Set exposing (Set)
 import Html as H exposing (Html)
 import Html.Attributes as HA
 import Html.Events as HE
@@ -13,7 +13,7 @@ import View.Icon as Icon
 import View.Row as Row
 
 
-columns : ColumnTitles -> Selection -> Index -> FilterConfig -> EveryDict DefinitionId SourceCode -> Html Msg
+columns : ColumnTitles -> Selection -> Index -> FilterConfig -> Dict DefinitionId SourceCode -> Html Msg
 columns columnTitles selection index filterConfig changes =
     H.div
         [ HA.class "top-table" ]
@@ -107,7 +107,7 @@ packages index { user, directDeps, depsOfDeps } =
             not (user || directDeps || depsOfDeps)
     in
     index.packages
-        |> EDict.toList
+        |> Dict.toList
         |> List.filter
             (\( _, { dependencyType } ) ->
                 showAll
@@ -212,10 +212,10 @@ modules index selection { exposed, effect, port_ } =
         SelectedPackages ->
             selection
                 |> Selection.selectedPackageId
-                |> Maybe.map ESet.singleton
-                |> Maybe.withDefault ESet.empty
+                |> Maybe.map Set.singleton
+                |> Maybe.withDefault Set.empty
     )
-        |> flip Selection.modulesForPackages index
+        |> (\a -> Selection.modulesForPackages a index)
         |> Utils.dictGetKv index.modules
         |> List.filter
             (\( _, module_ ) ->
@@ -224,16 +224,19 @@ modules index selection { exposed, effect, port_ } =
                         [ \{ isExposed } ->
                             if exposed then
                                 isExposed
+
                             else
                                 True
                         , \{ isEffect } ->
                             if effect then
                                 isEffect
+
                             else
                                 True
                         , \{ isPort } ->
                             if port_ then
                                 isPort
+
                             else
                                 True
                         ]
@@ -248,7 +251,7 @@ modulesColumn index selection modulesFilterConfig =
         |> innerTable
 
 
-definitionsColumn : Index -> Selection -> DefinitionsFilterConfig -> EveryDict DefinitionId SourceCode -> Html Msg
+definitionsColumn : Index -> Selection -> DefinitionsFilterConfig -> Dict DefinitionId SourceCode -> Html Msg
 definitionsColumn index selection definitionsFilterConfig changes =
     Index.shownDefinitions index selection definitionsFilterConfig
         |> List.map (\( definitionId, definition ) -> Row.definition selection changes definitionId definition)
@@ -264,6 +267,7 @@ packagesForModulesColumn : Index -> Selection -> PackagesToShowModulesFrom
 packagesForModulesColumn index selection =
     if Selection.selectedPackageId selection == Nothing then
         AllPackages
+
     else
         SelectedPackages
 

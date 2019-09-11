@@ -1,7 +1,8 @@
 module View exposing (view)
 
+import AssocList as Dict exposing (Dict)
+import Browser
 import Editor
-import EveryDict as EDict exposing (EveryDict)
 import FilterConfig
 import Html as H exposing (Html)
 import Html.Attributes as HA
@@ -13,12 +14,16 @@ import View.Footer exposing (..)
 import View.SourceCode exposing (..)
 
 
-view : Model -> Html Msg
+view : Model -> Browser.Document Msg
 view model =
-    H.div [ HA.class "window" ]
-        [ content model
-        , footer model
+    { title = "elm-browser"
+    , body =
+        [ H.div [ HA.class "window" ]
+            [ content model
+            , footer model
+            ]
         ]
+    }
 
 
 content : Model -> Html Msg
@@ -26,6 +31,7 @@ content model =
     H.div [ HA.class "window-content" ]
         [ if model.isCompiling then
             empty "Compiling"
+
           else
             maybeTable model.columnTitles model.editor model.project
         ]
@@ -70,10 +76,10 @@ noProject =
 
 
 project : ColumnTitles -> Editor.Model -> Project -> Html Msg
-project columnTitles editor project =
-    project.index
-        |> Maybe.map (\index -> projectWithContent columnTitles editor project.selection index project.filterConfig project.changes)
-        |> Maybe.withDefault (projectWithContent columnTitles editor NothingSelected Index.empty FilterConfig.empty EDict.empty)
+project columnTitles editor project_ =
+    project_.index
+        |> Maybe.map (\index -> projectWithContent columnTitles editor project_.selection index project_.filterConfig project_.changes)
+        |> Maybe.withDefault (projectWithContent columnTitles editor NothingSelected Index.empty FilterConfig.empty Dict.empty)
 
 
 projectWithContent :
@@ -82,7 +88,7 @@ projectWithContent :
     -> Selection
     -> Index
     -> FilterConfig
-    -> EveryDict DefinitionId SourceCode
+    -> Dict DefinitionId SourceCode
     -> Html Msg
 projectWithContent columnTitles editor selection index filterConfig changes =
     H.div

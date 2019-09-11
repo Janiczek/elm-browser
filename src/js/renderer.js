@@ -1,18 +1,18 @@
 const electron = require('electron');
 const {remote, ipcRenderer} = electron;
 const {requireTaskPool} = require('electron-remote');
-const Elm = require('../../dist/js/elm.js');
+const {Elm} = require('../dist/js/elm.js');
 
 const mainProcess = remote.require('./main.js');
 
 // do CPU-intensive stuff in another process
-const $replaceInFile = requireTaskPool(require.resolve('./bg/replace-in-file.js'));
-const $copyFromTemplate = requireTaskPool(require.resolve('./bg/copy-from-template.js'));
-const $listUserElmFiles = requireTaskPool(require.resolve('./bg/list-user-elm-files.js'));
-const $listFilesForIndex = requireTaskPool(require.resolve('./bg/list-files-for-index.js'));
-const $compileElm = requireTaskPool(require.resolve('./bg/compile-elm.js'));
+const $replaceInFile = requireTaskPool(require.resolve('./js/bg/replace-in-file.js'));
+const $copyFromTemplate = requireTaskPool(require.resolve('./js/bg/copy-from-template.js'));
+const $listUserElmFiles = requireTaskPool(require.resolve('./js/bg/list-user-elm-files.js'));
+const $listFilesForIndex = requireTaskPool(require.resolve('./js/bg/list-files-for-index.js'));
+const $compileElm = requireTaskPool(require.resolve('./js/bg/compile-elm.js'));
 
-const app = Elm.Main.fullscreen();
+const app = Elm.Main.init();
 
 const sendToElm = (tag, data) => {
     app.ports.msgForElm.send({tag, data});
@@ -95,8 +95,8 @@ const changeTitle = newTitle => {
     document.title = newTitle;
 };
 
-const chooseProjectPath = () => {
-    const paths = mainProcess.selectDirectory();
+const chooseProjectPath = async function() {
+    const paths = await mainProcess.selectDirectory();
     if (paths !== undefined && paths.length > 0) {
       return Promise.resolve(paths[0]);
     } else {

@@ -1,7 +1,7 @@
 module Selection exposing (..)
 
-import EveryDict as EDict
-import EverySet as ESet exposing (EverySet)
+import AssocList as Dict exposing (Dict)
+import AssocSet as Set exposing (Set)
 import Types exposing (..)
 
 
@@ -72,37 +72,37 @@ selectedDefinitionId selection =
 
 
 isPackageSelected : PackageId -> Selection -> Bool
-isPackageSelected packageId selection =
+isPackageSelected packageId_ selection =
     selection
         |> selectedPackageId
-        |> Maybe.map ((==) packageId)
+        |> Maybe.map ((==) packageId_)
         |> Maybe.withDefault False
 
 
 isModuleSelected : ModuleId -> Selection -> Bool
-isModuleSelected moduleId selection =
+isModuleSelected moduleId_ selection =
     selection
         |> selectedModuleId
-        |> Maybe.map ((==) moduleId)
+        |> Maybe.map ((==) moduleId_)
         |> Maybe.withDefault False
 
 
 isDefinitionSelected : DefinitionId -> Selection -> Bool
-isDefinitionSelected definitionId selection =
+isDefinitionSelected definitionId_ selection =
     selection
         |> selectedDefinitionId
-        |> Maybe.map ((==) definitionId)
+        |> Maybe.map ((==) definitionId_)
         |> Maybe.withDefault False
 
 
-modulesForPackages : EverySet PackageId -> Index -> EverySet ModuleId
+modulesForPackages : Set PackageId -> Index -> Set ModuleId
 modulesForPackages packages index =
     index.packages
-        |> EDict.filter (\packageId _ -> ESet.member packageId packages)
-        |> EDict.values
+        |> Dict.filter (\packageId_ _ -> Set.member packageId_ packages)
+        |> Dict.values
         |> List.map .modules
-        |> List.concatMap ESet.toList
-        |> ESet.fromList
+        |> List.concatMap Set.toList
+        |> Set.fromList
 
 
 packageId : Named a -> PackageId

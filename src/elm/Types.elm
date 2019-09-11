@@ -1,9 +1,9 @@
 module Types exposing (..)
 
+import AssocList as Dict exposing (Dict)
+import AssocSet as Set exposing (Set)
 import Editor
 import Elm.Syntax.Range exposing (Location, Range)
-import EveryDict exposing (EveryDict)
-import EverySet exposing (EverySet)
 import Html exposing (Html)
 import Json.Encode as JE
 
@@ -79,7 +79,7 @@ type alias Project =
     , index : Maybe Index
     , selection : Selection
     , filterConfig : FilterConfig
-    , changes : EveryDict DefinitionId SourceCode
+    , changes : Dict DefinitionId SourceCode
     }
 
 
@@ -138,9 +138,9 @@ type Selection
 
 
 type alias Index =
-    { packages : EveryDict PackageId Package
-    , modules : EveryDict ModuleId Module
-    , definitions : EveryDict DefinitionId Definition
+    { packages : Dict PackageId Package
+    , modules : Dict ModuleId Module
+    , definitions : Dict DefinitionId Definition
     }
 
 
@@ -148,7 +148,7 @@ type alias Package =
     { name : String
     , version : String
     , dependencyType : DependencyType
-    , modules : EverySet ModuleId
+    , modules : Set ModuleId
     }
 
 
@@ -158,7 +158,7 @@ type alias Module =
     , isExposed : Bool
     , isEffect : Bool
     , isPort : Bool
-    , definitions : EverySet DefinitionId
+    , definitions : Set DefinitionId
     }
 
 

@@ -1,14 +1,14 @@
 module Index exposing (..)
 
-import EveryDict as EDict exposing (EveryDict)
-import EverySet as ESet exposing (EverySet)
+import AssocList as Dict exposing (Dict)
+import AssocSet as Set exposing (Set)
 import Maybe.Extra as Maybe
 import Selection
 import Types exposing (..)
 import Utils
 
 
-sourceCode : Selection -> Index -> FilterConfig -> EveryDict DefinitionId SourceCode -> Maybe SourceCode
+sourceCode : Selection -> Index -> FilterConfig -> Dict DefinitionId SourceCode -> Maybe SourceCode
 sourceCode selection index filterConfig changes =
     let
         definitionId : Maybe DefinitionId
@@ -21,9 +21,9 @@ sourceCode selection index filterConfig changes =
                 |> ifDefinitionCanBeShown selection index filterConfig
     in
     Maybe.map2
-        (\definitionId ( _, definition ) ->
+        (\definitionId_ ( _, definition ) ->
             changes
-                |> EDict.get definitionId
+                |> Dict.get definitionId_
                 |> Maybe.withDefault definition.sourceCode
         )
         definitionId
@@ -37,8 +37,8 @@ moduleForSelectedDefinition selection index =
         |> Maybe.andThen
             (\definitionId ->
                 index.modules
-                    |> EDict.filter (\_ module_ -> ESet.member definitionId module_.definitions)
-                    |> EDict.values
+                    |> Dict.filter (\_ module_ -> Set.member definitionId module_.definitions)
+                    |> Dict.values
                     |> List.head
             )
 
@@ -50,21 +50,22 @@ moduleIdForSelectedDefinition selection index =
         |> Maybe.andThen
             (\definitionId ->
                 index.modules
-                    |> EDict.filter (\_ module_ -> ESet.member definitionId module_.definitions)
-                    |> EDict.keys
+                    |> Dict.filter (\_ module_ -> Set.member definitionId module_.definitions)
+                    |> Dict.keys
                     |> List.head
             )
 
 
 selectedModuleIdAndDefinition : Selection -> Index -> Maybe ( ModuleId, Definition )
 selectedModuleIdAndDefinition selection index =
-    Maybe.map2 (,)
+    Maybe.map2 (\a b -> ( a, b ))
         (moduleIdForSelectedDefinition selection index)
         (selectedDefinition selection index)
         |> Maybe.andThen
             (\( moduleId, definition ) ->
                 if Selection.selectedModuleId selection == Just moduleId then
                     Just ( moduleId, definition )
+
                 else
                     Nothing
             )
@@ -74,12 +75,12 @@ selectedDefinition : Selection -> Index -> Maybe Definition
 selectedDefinition selection index =
     selection
         |> Selection.selectedDefinitionId
-        |> Maybe.andThen (\definitionId -> EDict.get definitionId index.definitions)
+        |> Maybe.andThen (\definitionId -> Dict.get definitionId index.definitions)
 
 
 selectedDefinitionAndId : Selection -> Index -> Maybe ( DefinitionId, Definition )
 selectedDefinitionAndId selection index =
-    Maybe.map2 (,)
+    Maybe.map2 (\a b -> ( a, b ))
         (Selection.selectedDefinitionId selection)
         (selectedDefinition selection index)
 
@@ -103,14 +104,14 @@ ifDefinitionCanBeShown selection index filterConfig maybeModuleIdAndDefinition =
 selectedPackage : Selection -> Index -> Maybe Package
 selectedPackage selection index =
     Selection.selectedPackageId selection
-        |> Maybe.andThen (\packageId -> EDict.get packageId index.packages)
+        |> Maybe.andThen (\packageId -> Dict.get packageId index.packages)
 
 
 empty : Index
 empty =
-    { packages = EDict.empty
-    , modules = EDict.empty
-    , definitions = EDict.empty
+    { packages = Dict.empty
+    , modules = Dict.empty
+    , definitions = Dict.empty
     }
 
 
@@ -123,19 +124,21 @@ shownDefinitions index selection { exposed } =
     if canShowDefinitionsFromSelectedModule index selection then
         selection
             |> Selection.selectedModuleId
-            |> Maybe.andThen (flip EDict.get index.modules)
+            |> Maybe.andThen (\a -> Dict.get a index.modules)
             |> Maybe.map .definitions
-            |> Maybe.withDefault ESet.empty
+            |> Maybe.withDefault Set.empty
             |> Utils.dictGetKv index.definitions
             |> List.filter
                 (\( _, { isExposed } ) ->
                     showAll
                         || (if exposed then
                                 isExposed
+
                             else
                                 True
                            )
                 )
+
     else
         []
 
@@ -161,7 +164,7 @@ canShowDefinitionsFromSelectedModule index selection =
 moduleIsInPackage : Index -> ModuleId -> PackageId -> Bool
 moduleIsInPackage index moduleId packageId =
     index.packages
-        |> EDict.get packageId
+        |> Dict.get packageId
         |> Maybe.map .modules
-        |> Maybe.map (ESet.member moduleId)
+        |> Maybe.map (Set.member moduleId)
         |> Maybe.withDefault False

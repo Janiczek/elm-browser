@@ -29,11 +29,12 @@ genericIcon classPrefix type_ condition tooltip =
             iconString =
                 "icon " ++ classPrefix ++ type_
         in
-            H.span
-                [ HA.class <| "row__icon " ++ iconString
-                , HE.onMouseEnter (ShowFooterMsg ( H.span [ HA.class <| "footer__icon " ++ iconString ] [], tooltip ))
-                , HE.onMouseLeave HideFooterMsg
-                ]
-                []
+        H.span
+            [ HA.class <| "row__icon " ++ iconString
+            , HE.onMouseEnter (ShowFooterMsg ( H.span [ HA.class <| "footer__icon " ++ iconString ] [], tooltip ))
+            , HE.onMouseLeave HideFooterMsg
+            ]
+            []
+
     else
         H.text ""

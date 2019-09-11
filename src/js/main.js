@@ -1,6 +1,4 @@
-const electron = require('electron');
-const {app, dialog, Menu, ipcMain} = electron;
-const BrowserWindow = electron.BrowserWindow;
+const {app, dialog, Menu, ipcMain, BrowserWindow} = require('electron');
 
 const path = require('path');
 const url = require('url');
@@ -10,7 +8,10 @@ let mainWindow;
 const createWindow = () => {
     mainWindow = new BrowserWindow({
         width: 800,
-        height: 600
+        height: 600,
+        webPreferences: {
+          nodeIntegration: true,
+        },
     });
 
     mainWindow.loadURL(url.format({

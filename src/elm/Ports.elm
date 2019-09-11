@@ -71,7 +71,7 @@ getMsgForElm tagger onError =
                             tagger (ProjectCreated path)
 
                         Err err ->
-                            onError <| "Invalid data for ProjectCreated: " ++ err
+                            onError <| "Invalid data for ProjectCreated: " ++ JD.errorToString err
 
                 "ProjectOpened" ->
                     case JD.decodeValue JD.string portData.data of
@@ -79,7 +79,7 @@ getMsgForElm tagger onError =
                             tagger (ProjectOpened path)
 
                         Err err ->
-                            onError <| "Invalid data for ProjectOpened: " ++ err
+                            onError <| "Invalid data for ProjectOpened: " ++ JD.errorToString err
 
                 "FilesForIndex" ->
                     case JD.decodeValue filesForIndexDecoder portData.data of
@@ -87,17 +87,17 @@ getMsgForElm tagger onError =
                             tagger (FilesForIndex files)
 
                         Err err ->
-                            onError <| "Invalid data for FilesForIndex: " ++ err
+                            onError <| "Invalid data for FilesForIndex: " ++ JD.errorToString err
 
                 _ ->
-                    onError <| "Unexpected Msg for Elm: " ++ toString portData
+                    onError <| "Unexpected Msg for Elm: " ++ portData.tag
         )
 
 
 filesForIndexDecoder : Decoder (List ( String, String ))
 filesForIndexDecoder =
     JD.list
-        (JD.map2 (,)
+        (JD.map2 (\a b -> ( a, b ))
             (JD.index 0 JD.string)
             (JD.index 1 JD.string)
         )

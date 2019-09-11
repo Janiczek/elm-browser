@@ -1,9 +1,9 @@
 module App exposing (init, subscriptions, update)
 
+import AssocList as Dict exposing (Dict)
 import Cmd.Extra exposing (..)
 import Editor
 import Elm.Syntax.Range exposing (Location)
-import EveryDict as EDict exposing (EveryDict)
 import FilterConfig
 import Html exposing (Html)
 import Index
@@ -13,8 +13,8 @@ import Selection
 import Types exposing (..)
 
 
-init : ( Model, Cmd Msg )
-init =
+init : () -> ( Model, Cmd Msg )
+init () =
     { project = Nothing
     , isCompiling = False
     , footerMsg = Nothing
@@ -227,7 +227,7 @@ markAsDirty model sourceCode =
     Maybe.map2
         (\project definitionId ->
             project.changes
-                |> EDict.insert definitionId sourceCode
+                |> Dict.insert definitionId sourceCode
                 |> asChangesIn model.project
                 |> asProjectIn model
         )
@@ -243,7 +243,7 @@ saveChange definitionId (SourceCode sourceCode) model =
         definition =
             model.project
                 |> Maybe.andThen .index
-                |> Maybe.andThen (\index -> EDict.get definitionId index.definitions)
+                |> Maybe.andThen (\index -> Dict.get definitionId index.definitions)
 
         filepath : Maybe String
         filepath =
@@ -266,12 +266,12 @@ saveChange definitionId (SourceCode sourceCode) model =
         replaceInFileCmd : Cmd Msg
         replaceInFileCmd =
             Maybe.map4
-                (\definition filepath from to ->
+                (\definition_ filepath_ from_ to_ ->
                     Ports.sendMsgForElectron
                         (ReplaceInFile
-                            { filepath = filepath
-                            , from = from
-                            , to = to
+                            { filepath = filepath_
+                            , from = from_
+                            , to = to_
                             , replacement = sourceCode
                             }
                         )
@@ -291,7 +291,7 @@ removeChange : DefinitionId -> Model -> Model
 removeChange definitionId model =
     model.project
         |> Maybe.map .changes
-        |> Maybe.map (EDict.remove definitionId)
+        |> Maybe.map (Dict.remove definitionId)
         |> Maybe.map (asChangesIn model.project)
         |> Maybe.withDefault model.project
         |> asProjectIn model
@@ -315,6 +315,7 @@ selectPackage packageId model =
                             (\index ->
                                 if Index.moduleIsInPackage index moduleId packageId then
                                     PackageAndModuleSelected packageId moduleId
+
                                 else
                                     PackageSelected packageId
                             )
@@ -323,6 +324,7 @@ selectPackage packageId model =
                 PackageAndModuleSelected oldPackageId _ ->
                     if oldPackageId == packageId then
                         selection
+
                     else
                         PackageSelected packageId
 
@@ -333,6 +335,7 @@ selectPackage packageId model =
                             (\index ->
                                 if Index.moduleIsInPackage index moduleId packageId then
                                     AllSelected packageId moduleId definitionId
+
                                 else
                                     PackageSelected packageId
                             )
@@ -341,6 +344,7 @@ selectPackage packageId model =
                 AllSelected oldPackageId _ _ ->
                     if oldPackageId == packageId then
                         selection
+
                     else
                         PackageSelected packageId
         )
@@ -366,12 +370,14 @@ selectModule moduleId model =
                 ModuleAndDefinitionSelected oldModuleId _ ->
                     if moduleId == oldModuleId then
                         selection
+
                     else
                         ModuleSelected moduleId
 
                 AllSelected packageId oldModuleId _ ->
                     if moduleId == oldModuleId then
                         selection
+
                     else
                         PackageAndModuleSelected packageId moduleId
         )
@@ -526,7 +532,7 @@ projectCreated path model =
                 , index = Nothing
                 , selection = NothingSelected
                 , filterConfig = FilterConfig.empty
-                , changes = EDict.empty
+                , changes = Dict.empty
                 }
         , isCompiling = False
     }
@@ -545,7 +551,7 @@ projectOpened path model =
                 , index = Nothing
                 , selection = NothingSelected
                 , filterConfig = FilterConfig.empty
-                , changes = EDict.empty
+                , changes = Dict.empty
                 }
         , isCompiling = False
     }
@@ -630,7 +636,7 @@ asSelectionIn maybeProject selection =
         |> Maybe.map (\project -> { project | selection = selection })
 
 
-asChangesIn : Maybe Project -> EveryDict DefinitionId SourceCode -> Maybe Project
+asChangesIn : Maybe Project -> Dict DefinitionId SourceCode -> Maybe Project
 asChangesIn maybeProject changes =
     maybeProject
         |> Maybe.map (\project -> { project | changes = changes })
@@ -649,6 +655,6 @@ asIndexIn maybeProject maybeIndex =
 
 asDefinitionIn : Maybe Index -> Maybe DefinitionId -> Definition -> Maybe Index
 asDefinitionIn maybeIndex maybeDefinitionId definition =
-    Maybe.map2 (\index id -> { index | definitions = EDict.insert id definition index.definitions })
+    Maybe.map2 (\index id -> { index | definitions = Dict.insert id definition index.definitions })
         maybeIndex
         maybeDefinitionId

@@ -1,7 +1,7 @@
 module View.SourceCode exposing (sourceCode)
 
+import AssocList as Dict exposing (Dict)
 import Editor
-import EveryDict as EDict exposing (EveryDict)
 import Html as H exposing (Html)
 import Html.Attributes as HA
 import Html.Events as HE
@@ -9,7 +9,7 @@ import Selection
 import Types exposing (..)
 
 
-sourceCode : Editor.Model -> Selection -> EveryDict DefinitionId SourceCode -> Html Msg
+sourceCode : Editor.Model -> Selection -> Dict DefinitionId SourceCode -> Html Msg
 sourceCode editor selection changes =
     let
         selectedId : Maybe DefinitionId
@@ -19,7 +19,7 @@ sourceCode editor selection changes =
         changedCode : Maybe SourceCode
         changedCode =
             selectedId
-                |> Maybe.andThen (\id -> EDict.get id changes)
+                |> Maybe.andThen (\id -> Dict.get id changes)
 
         config : Editor.Config
         config =

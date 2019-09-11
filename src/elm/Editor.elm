@@ -1,6 +1,6 @@
 module Editor exposing (Config, Model, Msg, init, setContent, update, view)
 
-import Array.Hamt as Array exposing (Array)
+import Array exposing (Array)
 import Html as H exposing (Attribute, Html)
 import Html.Attributes as HA
 import Html.Events as HE
@@ -248,6 +248,7 @@ newLine ({ position, lines } as model) =
                     (\i content ->
                         if i == line then
                             String.left column content
+
                         else
                             content
                     )
@@ -299,6 +300,7 @@ insertChar char ({ position, lines } as model) =
                     (\i content ->
                         if i == line then
                             lineWithCharAdded content
+
                         else
                             content
                     )
@@ -319,6 +321,7 @@ removeCharBefore : Model -> Model
 removeCharBefore ({ position, lines } as model) =
     if isStartOfDocument position then
         model
+
     else
         let
             { line, column } =
@@ -334,15 +337,19 @@ removeCharBefore ({ position, lines } as model) =
                 if lineNum == line - 1 then
                     if isFirstColumn column then
                         [ content ++ lineContent lines line ]
+
                     else
                         [ content ]
+
                 else if lineNum == line then
                     if isFirstColumn column then
                         []
+
                     else
                         [ String.left (column - 1) content
                             ++ String.dropLeft column content
                         ]
+
                 else
                     [ content ]
 
@@ -363,6 +370,7 @@ removeCharAfter : Model -> Model
 removeCharAfter ({ position, lines } as model) =
     if isEndOfDocument lines position then
         model
+
     else
         let
             { line, column } =
@@ -377,15 +385,19 @@ removeCharAfter ({ position, lines } as model) =
                 if lineNum == line then
                     if isOnLastColumn then
                         [ content ++ lineContent lines (line + 1) ]
+
                     else
                         [ String.left column content
                             ++ String.dropLeft (column + 1) content
                         ]
+
                 else if lineNum == line + 1 then
                     if isOnLastColumn then
                         []
+
                     else
                         [ content ]
+
                 else
                     [ content ]
 
@@ -406,6 +418,7 @@ moveUp : Position -> Array String -> Position
 moveUp { line, column } lines =
     if isFirstLine line then
         startOfDocument
+
     else
         let
             line_ : Int
@@ -421,6 +434,7 @@ moveDown : Position -> Array String -> Position
 moveDown { line, column } lines =
     if isLastLine lines line then
         endOfDocument lines
+
     else
         let
             line_ : Int
@@ -436,6 +450,7 @@ moveLeft : Position -> Array String -> Position
 moveLeft ({ line, column } as position) lines =
     if isStartOfDocument position then
         position
+
     else if isFirstColumn column then
         let
             line_ : Int
@@ -445,6 +460,7 @@ moveLeft ({ line, column } as position) lines =
         { line = line_
         , column = lastColumn lines line_
         }
+
     else
         { line = line
         , column = column - 1
@@ -455,10 +471,12 @@ moveRight : Position -> Array String -> Position
 moveRight ({ line, column } as position) lines =
     if isEndOfDocument lines position then
         position
+
     else if isLastColumn lines line column then
         { line = nextLine lines line
         , column = 0
         }
+
     else
         { line = line
         , column = column + 1
@@ -560,20 +578,19 @@ lineLength lines lineNum =
 view : Config -> Model -> Html Msg
 view ({ isDisabled } as config) model =
     H.div
-        ([ HA.style
-            [ ( "display", "flex" )
-            , ( "flex-direction", "row" )
-            , ( "font-family", "monospace" )
-            , ( "font-size", toString fontSize ++ "px" )
-            , ( "line-height", toString lineHeight ++ "px" )
-            , ( "white-space", "pre" )
-            , ( "flex", "1" )
-            ]
+        ([ HA.style "display" "flex"
+         , HA.style "flex-direction" "row"
+         , HA.style "font-family" "monospace"
+         , HA.style "font-size" (String.fromFloat fontSize ++ "px")
+         , HA.style "line-height" (String.fromFloat lineHeight ++ "px")
+         , HA.style "white-space" "pre"
+         , HA.style "flex" "1"
          , HA.tabindex 0
          , HA.class "editor"
          ]
             ++ (if isDisabled then
                     []
+
                 else
                     [ HE.on "keydown" keyDecoder ]
                )
@@ -586,16 +603,15 @@ view ({ isDisabled } as config) model =
 viewLineNumbers : Config -> Model -> Html Msg
 viewLineNumbers { isDisabled } model =
     H.div
-        [ HA.style
-            [ ( "width", "2em" )
-            , ( "text-align", "center" )
-            , ( "color", "#888" )
-            , ( "display", "flex" )
-            , ( "flex-direction", "column" )
-            ]
+        [ HA.style "width" "2em"
+        , HA.style "text-align" "center"
+        , HA.style "color" "#888"
+        , HA.style "display" "flex"
+        , HA.style "flex-direction" "column"
         ]
         (if isDisabled then
             []
+
          else
             List.range 1 (Array.length model.lines)
                 |> List.map viewLineNumber
@@ -604,21 +620,20 @@ viewLineNumbers { isDisabled } model =
 
 viewLineNumber : Int -> Html Msg
 viewLineNumber n =
-    H.span [] [ H.text (toString n) ]
+    H.span [] [ H.text (String.fromInt n) ]
 
 
 viewContent : Config -> Model -> Html Msg
 viewContent ({ isDisabled } as config) model =
     H.div
-        ([ HA.style
-            [ ( "position", "relative" )
-            , ( "flex", "1" )
-            , ( "background-color", "#f0f0f0" )
-            , ( "user-select", "none" )
-            ]
+        ([ HA.style "position" "relative"
+         , HA.style "flex" "1"
+         , HA.style "background-color" "#f0f0f0"
+         , HA.style "user-select" "none"
          ]
             ++ (if isDisabled then
                     []
+
                 else
                     [ HE.onClick GoToHoveredPosition
                     , HE.onMouseOut (Hover NoHover)
@@ -640,16 +655,15 @@ viewLines config position hover lines =
 viewLine : Config -> Position -> Hover -> Array String -> Int -> String -> Html Msg
 viewLine ({ isDisabled } as config) position hover lines line content =
     H.div
-        ([ HA.style
-            [ ( "position", "absolute" )
-            , ( "left", "0" )
-            , ( "right", "0" )
-            , ( "height", toString lineHeight ++ "px" )
-            , ( "top", toString (toFloat line * lineHeight) ++ "px" )
-            ]
+        ([ HA.style "position" "absolute"
+         , HA.style "left" "0"
+         , HA.style "right" "0"
+         , HA.style "height" (String.fromFloat lineHeight ++ "px")
+         , HA.style "top" (String.fromFloat (toFloat line * lineHeight) ++ "px")
          ]
             ++ (if isDisabled then
                     []
+
                 else
                     [ HE.onMouseOver (Hover (HoverLine line)) ]
                )
@@ -657,6 +671,7 @@ viewLine ({ isDisabled } as config) position hover lines line content =
         (if position.line == line && isLastColumn lines line position.column then
             viewChars config position hover lines line content
                 ++ [ viewCursor config position nbsp ]
+
          else
             viewChars config position hover lines line content
         )
@@ -673,10 +688,12 @@ viewChar : Config -> Position -> Hover -> Array String -> Int -> Int -> Char -> 
 viewChar ({ isDisabled } as config) position hover lines line column char =
     if position.line == line && position.column == column then
         viewCursor config position (String.fromChar char)
+
     else
         H.span
             (if isDisabled then
                 []
+
              else
                 [ onHover { line = line, column = column } ]
             )
@@ -685,7 +702,7 @@ viewChar ({ isDisabled } as config) position hover lines line column char =
 
 nbsp : String
 nbsp =
-    " "
+    "\u{00A0}"
 
 
 viewCursor : Config -> Position -> String -> Html Msg
@@ -693,8 +710,9 @@ viewCursor { isDisabled } position char =
     H.span
         (if isDisabled then
             []
+
          else
-            [ HA.style [ ( "background-color", "orange" ) ]
+            [ HA.style "background-color" "orange"
             , onHover position
             ]
         )
@@ -703,9 +721,13 @@ viewCursor { isDisabled } position char =
 
 onHover : Position -> Attribute Msg
 onHover position =
-    HE.onWithOptions "mouseover"
-        { stopPropagation = True, preventDefault = True }
-        (JD.succeed (Hover (HoverChar position)))
+    HE.custom "mouseover"
+        (JD.succeed
+            { message = Hover (HoverChar position)
+            , stopPropagation = True
+            , preventDefault = True
+            }
+        )
 
 
 fontSize : Float

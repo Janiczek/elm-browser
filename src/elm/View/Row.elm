@@ -1,6 +1,6 @@
 module View.Row exposing (definition, module_, package)
 
-import EveryDict as EDict exposing (EveryDict)
+import AssocList as Dict exposing (Dict)
 import Html as H exposing (Html)
 import Html.Attributes as HA
 import Html.Events as HE
@@ -10,43 +10,43 @@ import View.Icon exposing (..)
 
 
 package : Selection -> PackageId -> Package -> Html Msg
-package selection packageId package =
+package selection packageId package_ =
     row
         packageId
         SelectPackage
         DeselectPackage
         (Selection.isPackageSelected packageId selection)
-        (packageRow package)
+        (packageRow package_)
 
 
 module_ : Selection -> ModuleId -> Module -> Html Msg
-module_ selection moduleId module_ =
+module_ selection moduleId module__ =
     row
         moduleId
         SelectModule
         DeselectModule
         (Selection.isModuleSelected moduleId selection)
-        (moduleRow module_)
+        (moduleRow module__)
 
 
 definition :
     Selection
-    -> EveryDict DefinitionId SourceCode
+    -> Dict DefinitionId SourceCode
     -> DefinitionId
     -> Definition
     -> Html Msg
-definition selection changes definitionId definition =
+definition selection changes definitionId definition_ =
     let
         isDirty =
             changes
-                |> EDict.member definitionId
+                |> Dict.member definitionId
     in
     row
         definitionId
         SelectDefinition
         DeselectDefinition
         (Selection.isDefinitionSelected definitionId selection)
-        (definitionRow isDirty definition)
+        (definitionRow isDirty definition_)
 
 
 packageRow : Package -> Html Msg
@@ -117,6 +117,7 @@ row id selectMsg deselectMsg isSelected content =
         [ HE.onClick
             (if isSelected then
                 deselectMsg
+
              else
                 selectMsg id
             )

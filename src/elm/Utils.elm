@@ -1,39 +1,39 @@
 module Utils exposing (..)
 
-import EveryDict as EDict exposing (EveryDict)
-import EverySet as ESet exposing (EverySet)
+import AssocList as Dict exposing (Dict)
+import AssocSet as Set exposing (Set)
 import Json.Decode as JD exposing (Decoder)
 
 
-dictKeysToSet : EveryDict k v -> EverySet k
+dictKeysToSet : Dict k v -> Set k
 dictKeysToSet dict =
     dict
-        |> EDict.keys
-        |> ESet.fromList
+        |> Dict.keys
+        |> Set.fromList
 
 
-dictValuesToSet : EveryDict k v -> EverySet v
+dictValuesToSet : Dict k v -> Set v
 dictValuesToSet dict =
     dict
-        |> EDict.values
-        |> ESet.fromList
+        |> Dict.values
+        |> Set.fromList
 
 
-dictGetVals : EveryDict k v -> EverySet k -> List v
+dictGetVals : Dict k v -> Set k -> List v
 dictGetVals dict wantedKeys =
     dict
-        |> EDict.filter (\k v -> ESet.member k wantedKeys)
-        |> EDict.values
+        |> Dict.filter (\k v -> Set.member k wantedKeys)
+        |> Dict.values
 
 
-dictGetKv : EveryDict k v -> EverySet k -> List ( k, v )
+dictGetKv : Dict k v -> Set k -> List ( k, v )
 dictGetKv dict wantedKeys =
     dict
-        |> EDict.filter (\k v -> ESet.member k wantedKeys)
-        |> EDict.toList
+        |> Dict.filter (\k v -> Set.member k wantedKeys)
+        |> Dict.toList
 
 
-everySetDecoder : Decoder a -> Decoder (EverySet a)
-everySetDecoder decoder =
+setDecoder : Decoder a -> Decoder (Set a)
+setDecoder decoder =
     JD.list decoder
-        |> JD.map ESet.fromList
+        |> JD.map Set.fromList
