@@ -35,7 +35,7 @@ subscriptions model =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
+    case Debug.log "msg" msg of
         CreateProjectPressed ->
             createProjectPressed model
 
