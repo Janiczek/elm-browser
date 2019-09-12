@@ -79,7 +79,7 @@ project : ColumnTitles -> Editor.Model -> Project -> Html Msg
 project columnTitles editor project_ =
     project_.index
         |> Maybe.map (\index -> projectWithContent columnTitles editor project_.selection index project_.filterConfig project_.changes)
-        |> Maybe.withDefault (projectWithContent columnTitles editor NothingSelected Index.empty FilterConfig.empty Dict.empty)
+        |> Maybe.withDefault (empty "Indexing")
 
 
 projectWithContent :
