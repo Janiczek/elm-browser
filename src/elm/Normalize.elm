@@ -261,11 +261,7 @@ toRawPackages rootPath files =
                 |> List.filter isElmModule
     in
     files
-        |> List.filter
-            (\( path, _ ) ->
-                isElmJson path
-                    && not (isTestPath path)
-            )
+        |> List.filter (\( path, _ ) -> isElmJson path && not (isTestPath path))
         |> List.filterMap
             (\( path, source ) ->
                 source
@@ -285,7 +281,12 @@ toRawPackages rootPath files =
                                 files
                                     |> List.filter
                                         (\( path_, _ ) ->
-                                            String.contains data.name path_
+                                            (if isMain then
+                                                not (isDependencyPath path_)
+
+                                             else
+                                                String.contains data.name path_
+                                            )
                                                 && not (isTestPath path_)
                                                 && isElmModule path_
                                         )

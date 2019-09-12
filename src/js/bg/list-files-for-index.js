@@ -3,13 +3,13 @@ const readdir = require('recursive-readdir');
 const path = require('path');
 const os = require('os');
 
-const shouldIgnore = (rootPath) => (file, stats) => {
+const shouldIgnore = (rootPath, sourceDirs) => (file, stats) => {
   const filename = path.basename(file);
   const extension = path.extname(file);
   if (stats.isDirectory()) {
     return filename === 'node_modules';
   } else {
-    return extension !== '.elm' && (filename !== 'elm.json' || !file.includes(`${rootPath}/elm.json`));
+    return (extension !== '.elm' || !sourceDirs.some(sourceDir => file.includes(sourceDir))) && (filename !== 'elm.json' || !file.includes(`${rootPath}/elm.json`));
   }
 };
 
@@ -34,10 +34,10 @@ const readContents = async (paths) => {
 };
 
 const listFilesForIndex = async (rootPath) => {
-  const userPaths = await readdir(rootPath, [shouldIgnore(rootPath)]);
-
   const elmJsonString = await fs.readFile(`${rootPath}/elm.json`);
   const elmJson = JSON.parse(elmJsonString);
+
+  const userPaths = await readdir(rootPath, [shouldIgnore(rootPath, elmJson['source-directories'])]);
   const elmJsonDeps = [
     ...depPaths(elmJson['dependencies']['direct']),
     ...depPaths(elmJson['dependencies']['indirect']),
