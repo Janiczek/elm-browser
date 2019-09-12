@@ -2,14 +2,18 @@ module Normalize exposing (toIndex)
 
 import AssocList as Dict exposing (Dict)
 import AssocSet as Set exposing (Set)
+import Elm.Module
+import Elm.Package
 import Elm.Parser
 import Elm.Processing
+import Elm.Project
 import Elm.Syntax.Declaration exposing (Declaration(..))
 import Elm.Syntax.Exposing exposing (Exposing(..))
 import Elm.Syntax.File exposing (File)
 import Elm.Syntax.Module
 import Elm.Syntax.Node
 import Elm.Syntax.Range exposing (Range)
+import Elm.Version
 import Elm.Writer
 import Json.Decode as JD exposing (Decoder)
 import Regex exposing (Regex)
@@ -17,7 +21,7 @@ import Selection
 import Types exposing (..)
 
 
-type alias ElmPackageJson =
+type alias ElmJson =
     { name : String
     , dependencies : List String
     , version : String
@@ -28,7 +32,7 @@ type alias ElmPackageJson =
 type alias RawElmPackage =
     { path : String
     , isMain : Bool
-    , data : ElmPackageJson
+    , data : ElmJson
     , elmFiles : List ( String, String )
     }
 
@@ -126,13 +130,44 @@ parse source =
         |> Maybe.map (Elm.Processing.process Elm.Processing.init)
 
 
-elmPackageJsonDecoder : Decoder ElmPackageJson
-elmPackageJsonDecoder =
-    JD.map4 ElmPackageJson
-        (JD.field "repository" (JD.string |> JD.andThen repositoryToName))
-        (JD.field "dependencies" dependenciesDecoder)
-        (JD.field "version" JD.string)
-        (JD.field "exposed-modules" (JD.list JD.string))
+elmJsonDecoder : List String -> Decoder ElmJson
+elmJsonDecoder userModules =
+    Elm.Project.decoder
+        |> JD.map
+            (\project ->
+                case project of
+                    Elm.Project.Application app ->
+                        { name = "user/project"
+                        , dependencies =
+                            List.concat
+                                [ app.depsDirect
+                                , app.depsIndirect
+                                , app.testDepsDirect
+                                , app.testDepsIndirect
+                                ]
+                                |> List.map (Tuple.first >> Elm.Package.toString)
+                        , version = "APP"
+                        , exposedModules = userModules
+                        }
+
+                    Elm.Project.Package package ->
+                        { name = Elm.Package.toString package.name
+                        , dependencies =
+                            List.concat
+                                [ package.deps
+                                , package.testDeps -- maybe not?
+                                ]
+                                |> List.map (Tuple.first >> Elm.Package.toString)
+                        , version = Elm.Version.toString package.version
+                        , exposedModules =
+                            case package.exposed of
+                                Elm.Project.ExposedList list ->
+                                    List.map Elm.Module.toString list
+
+                                Elm.Project.ExposedDict list ->
+                                    List.concatMap (Tuple.second >> List.map Elm.Module.toString) list
+                        }
+            )
 
 
 dependenciesDecoder : Decoder (List String)
@@ -168,7 +203,7 @@ repositoryToName repository =
         |> Regex.findAtMost 1 repositoryNameRegex
         |> firstSubmatch
         |> Maybe.map JD.succeed
-        |> Maybe.withDefault (JD.fail "Couldn't decode the package author and name from the \"repository\" field in elm-package.json")
+        |> Maybe.withDefault (JD.fail "Couldn't decode the package author and name from the \"repository\" field in elm.json")
 
 
 sourceCodeToModuleName : String -> String
@@ -194,10 +229,10 @@ firstSubmatch matches =
         |> Maybe.andThen identity
 
 
-isElmPackageJson : String -> Bool
-isElmPackageJson path =
+isElmJson : String -> Bool
+isElmJson path =
     path
-        |> String.endsWith "elm-package.json"
+        |> String.endsWith "elm.json"
 
 
 isElmModule : String -> Bool
@@ -220,18 +255,29 @@ isDependencyPath path =
 
 toRawPackages : String -> List ( String, String ) -> List RawElmPackage
 toRawPackages rootPath files =
+    let
+        userModules : List String
+        userModules =
+            files
+                |> List.map Tuple.first
+                |> List.filter isElmModule
+    in
     files
-        |> List.filter (\( path, _ ) -> isElmPackageJson path && not (isTestPath path))
+        |> List.filter
+            (\( path, _ ) ->
+                isElmJson path
+                    && not (isTestPath path)
+            )
         |> List.filterMap
             (\( path, source ) ->
                 source
-                    |> JD.decodeString elmPackageJsonDecoder
+                    |> JD.decodeString (elmJsonDecoder userModules)
                     |> Result.toMaybe
                     |> Maybe.map
                         (\data ->
                             let
                                 isMain =
-                                    path == rootPath ++ "/elm-package.json"
+                                    path == rootPath ++ "/elm.json"
                             in
                             { path = path
                             , isMain = isMain
@@ -244,7 +290,7 @@ toRawPackages rootPath files =
                                                 not (isDependencyPath path_)
 
                                              else
-                                                path_ |> String.contains data.name
+                                                String.contains data.name path_
                                             )
                                                 && not (isTestPath path_)
                                                 && isElmModule path_

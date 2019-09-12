@@ -1,6 +1,6 @@
 const {compileToString} = require('node-elm-compiler');
 
-const compileElm = (path, userElmFiles) => {
+const compileElm = async function(path, userElmFiles) {
   return compileToString(userElmFiles, {
       cwd: path,
   });
