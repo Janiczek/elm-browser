@@ -1,5 +1,6 @@
-const electron = require('electron');
-const {remote, ipcRenderer} = electron;
+const {remote, ipcRenderer} = require('electron');
+const ElmDebugger = require('elm-debug-transformer');
+
 const {Elm} = require('../dist/js/elm.js');
 
 const mainProcess = remote.require('./main.js');
@@ -10,6 +11,7 @@ const listUserElmFiles = require('./js/bg/list-user-elm-files.js');
 const listFilesForIndex = require('./js/bg/list-files-for-index.js');
 const compileElm = require('./js/bg/compile-elm.js');
 
+ElmDebugger.register();
 const app = Elm.Main.init();
 
 const sendToElm = (tag, data) => {

@@ -130,8 +130,8 @@ parse source =
         |> Maybe.map (Elm.Processing.process Elm.Processing.init)
 
 
-elmJsonDecoder : List String -> Decoder ElmJson
-elmJsonDecoder userModules =
+elmJsonDecoder : String -> List String -> Decoder ElmJson
+elmJsonDecoder path userModules =
     Elm.Project.decoder
         |> JD.map
             (\project ->
@@ -141,9 +141,7 @@ elmJsonDecoder userModules =
                         , dependencies =
                             List.concat
                                 [ app.depsDirect
-                                , app.depsIndirect
                                 , app.testDepsDirect
-                                , app.testDepsIndirect
                                 ]
                                 |> List.map (Tuple.first >> Elm.Package.toString)
                         , version = "APP"
@@ -250,7 +248,7 @@ isTestPath path =
 isDependencyPath : String -> Bool
 isDependencyPath path =
     path
-        |> String.contains "/elm-stuff/"
+        |> String.contains "/.elm/"
 
 
 toRawPackages : String -> List ( String, String ) -> List RawElmPackage
@@ -271,7 +269,8 @@ toRawPackages rootPath files =
         |> List.filterMap
             (\( path, source ) ->
                 source
-                    |> JD.decodeString (elmJsonDecoder userModules)
+                    |> JD.decodeString (elmJsonDecoder path userModules)
+                    -- TODO elm/project-metadata-utils have problem with modules with numbers in them
                     |> Result.toMaybe
                     |> Maybe.map
                         (\data ->
@@ -286,12 +285,7 @@ toRawPackages rootPath files =
                                 files
                                     |> List.filter
                                         (\( path_, _ ) ->
-                                            (if isMain then
-                                                not (isDependencyPath path_)
-
-                                             else
-                                                String.contains data.name path_
-                                            )
+                                            String.contains data.name path_
                                                 && not (isTestPath path_)
                                                 && isElmModule path_
                                         )

@@ -20,7 +20,8 @@
   "devDependencies": {
     "devtron": "^1.4.0",
     "electron": "^6.0.8",
-    "elm": "^0.19.0-no-deps"
+    "elm": "^0.19.0-no-deps",
+    "elm-debug-transformer": "^1.0.1"
   },
   "dependencies": {
     "async-file": "^2.0.2",

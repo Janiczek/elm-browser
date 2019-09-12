@@ -241,6 +241,11 @@ electron@^6.0.8:
     electron-download "^4.1.0"
     extract-zip "^1.0.3"
 
+elm-debug-transformer@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/elm-debug-transformer/-/elm-debug-transformer-1.0.1.tgz#9c5f22d3048bb6c38230cd950ddd38875e2b2258"
+  integrity sha512-eN8C47Hrdk2b70iIzRP8V4Mrh5spmh5m7GTo/Ls1/hszPNDOW/7gLoPdtVJohKeP3/wc2lS8482cF7RjWuesfA==
+
 elm@^0.19.0-no-deps:
   version "0.19.0-no-deps"
   resolved "https://registry.yarnpkg.com/elm/-/elm-0.19.0-no-deps.tgz#4754b658c424771823ee91bd5bf6387647954add"
